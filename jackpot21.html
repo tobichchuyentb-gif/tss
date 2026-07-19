@@ -1,0 +1,3489 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cờ Tỷ Phú Thực Chiến Online</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111827;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #374151;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4b5563;
+        }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen select-none font-sans antialiased">
+
+    <!-- SCREEN 1: LOBBY -->
+    <div id="screen-lobby" class="flex flex-col items-center justify-center min-h-screen px-4">
+        <div class="w-full max-w-md bg-gray-900 border border-gray-800 p-8 rounded-2xl shadow-xl space-y-6">
+            <div class="text-center">
+                <h1 class="text-3xl font-extrabold text-amber-500 tracking-wide">CỜ TỶ PHÚ THỰC CHIẾN</h1>
+                <p class="text-sm text-gray-400 mt-2">Dành cho 2 - 5 người chơi trực tuyến thời gian thực</p>
+            </div>
+
+            <!-- Debug Notification Area -->
+            <div id="lobby-error-box" class="hidden bg-red-950/40 border border-red-800 text-red-200 text-xs p-3 rounded-lg space-y-1">
+                <p class="font-bold"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Thông báo hệ thống:</p>
+                <p id="lobby-error-text"></p>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Tên người chơi</label>
+                    <input 
+                        id="input-player-name"
+                        type="text" 
+                        class="w-full bg-gray-800 text-white rounded-lg px-4 py-3 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        placeholder="Tên của bạn..."
+                        maxlength="12"
+                    />
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Chọn Avatar</label>
+                    <div id="avatar-container" class="flex flex-wrap gap-2 justify-center">
+                        <!-- Avatars populated by JS -->
+                    </div>
+                </div>
+
+                <div class="pt-2">
+                    <button 
+                        id="btn-create-room"
+                        onclick="joinOrCreateRoom(true)"
+                        class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+                    >
+                        <i class="fa-solid fa-plus"></i> Tạo phòng đấu mới
+                    </button>
+                </div>
+
+                <div class="relative flex py-2 items-center">
+                    <div class="flex-grow border-t border-gray-800"></div>
+                    <span class="flex-shrink mx-4 text-gray-500 text-xs font-bold uppercase">Hoặc</span>
+                    <div class="flex-grow border-t border-gray-800"></div>
+                </div>
+
+                <div class="space-y-2">
+                    <input 
+                        id="input-room-code"
+                        type="text" 
+                        class="w-full bg-gray-800 text-white rounded-lg px-4 py-3 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-500 text-center tracking-widest font-mono uppercase"
+                        placeholder="Mã phòng 6 ký tự..."
+                        maxlength="6"
+                    />
+                    <button 
+                        onclick="joinOrCreateRoom(false)"
+                        class="w-full bg-amber-500 hover:bg-amber-600 text-gray-900 font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+                    >
+                        <i class="fa-solid fa-right-to-bracket"></i> Tham gia phòng chơi
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCREEN 2: MAIN GAME -->
+    <div id="screen-game" class="hidden flex flex-col lg:flex-row min-h-screen max-w-full">
+        <!-- LEFT AREA: GAME BOARD -->
+        <div class="flex-1 flex flex-col items-center justify-center p-4 bg-gray-950 border-r border-gray-900">
+            <div class="w-full flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <span id="display-room-code" class="bg-amber-500 text-gray-950 px-3 py-1 rounded-full font-black text-sm tracking-widest">
+                        ROOM: ------
+                    </span>
+                    <span class="text-xs text-gray-400 bg-gray-900 px-3 py-1 rounded-full">
+                        Chu kỳ kinh tế: <strong id="display-economy-cycle" class="text-yellow-400">---</strong>
+                    </span>
+                </div>
+                <button 
+                    onclick="leaveRoom()"
+                    class="bg-red-950 hover:bg-red-900 text-red-200 border border-red-800/60 px-4 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2"
+                >
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i> Rời phòng
+                </button>
+            </div>
+
+            <!-- 11x11 Grid Board Container -->
+            <div id="board" class="w-full max-w-[700px] aspect-square bg-gray-900 p-2 rounded-xl border border-gray-800 grid grid-cols-11 grid-rows-11 gap-0.5 relative">
+                <!-- Programmatically generated by JS -->
+            </div>
+        </div>
+
+        <!-- RIGHT AREA: LEADERBOARD & GAME HISTORY -->
+        <div class="w-full lg:w-[400px] bg-gray-900 flex flex-col border-l border-gray-800">
+            <!-- Leaderboard Panel -->
+            <div class="p-4 border-b border-gray-850">
+                <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Xếp Hạng Tài Sản Ròng</h2>
+                <div id="leaderboard" class="space-y-2">
+                    <!-- Leaderboard entries -->
+                </div>
+            </div>
+
+            <!-- Trade Request Alert -->
+            <div id="trade-alert" class="hidden bg-amber-950/30 border-y border-amber-500 p-4 space-y-3">
+                <h3 class="text-sm font-bold text-amber-500 flex items-center gap-2">
+                    <i class="fa-solid fa-handshake"></i> Lời mời trao đổi tài sản
+                </h3>
+                <p id="trade-alert-text" class="text-xs text-gray-300">---</p>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div class="bg-gray-900/60 p-2 rounded">
+                        <p class="font-semibold text-gray-400">Bạn được nhận:</p>
+                        <p id="trade-receive-cash" class="font-bold text-emerald-400 font-mono">+$0đ</p>
+                        <p id="trade-receive-props" class="text-gray-300">Đất: Không có</p>
+                    </div>
+                    <div class="bg-gray-900/60 p-2 rounded">
+                        <p class="font-semibold text-gray-400">Bạn chuyển nhượng:</p>
+                        <p id="trade-give-cash" class="font-bold text-rose-400 font-mono">-$0đ</p>
+                        <p id="trade-give-props" class="text-gray-300">Đất: Không có</p>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="acceptTradeProposal()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-1.5 px-3 rounded text-xs transition-colors">Ký hợp đồng</button>
+                    <button onclick="declineTradeProposal()" class="flex-1 bg-rose-600 hover:bg-rose-500 text-white font-bold py-1.5 px-3 rounded text-xs transition-colors">Hủy đề xuất</button>
+                </div>
+            </div>
+
+            <!-- History log -->
+            <div class="flex-1 flex flex-col overflow-hidden">
+                <div class="p-4 border-b border-gray-800 bg-gray-900/40 flex items-center justify-between">
+                    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Lịch sử sự kiện</h2>
+                    <button 
+                        onclick="clearLogs()"
+                        class="text-gray-500 hover:text-gray-300 text-xs font-semibold"
+                    >
+                        Xóa nhật ký
+                    </button>
+                </div>
+                <div id="history-logs" class="flex-1 overflow-y-auto p-4 space-y-2 font-mono text-[11px] leading-relaxed bg-gray-950">
+                    <!-- Logs list -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- --- MODALS --- -->
+
+    <!-- Modal: Buy Land -->
+    <div id="modal-buy" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+        <div class="w-full max-w-sm bg-gray-900 border border-gray-800 p-6 rounded-xl space-y-4">
+            <div class="text-center">
+                <span class="text-xs font-bold text-emerald-500 tracking-widest uppercase">GIAO DỊCH BẤT ĐỘNG SẢN</span>
+                <h3 id="buy-tile-name" class="text-xl font-bold mt-1 text-white">---</h3>
+            </div>
+            <div class="bg-gray-950 p-4 rounded-lg space-y-2 font-mono text-sm border border-gray-800">
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Giá chuyển nhượng:</span>
+                    <span id="buy-tile-cost" class="font-bold text-emerald-400">$0đ</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Thuế đất gốc:</span>
+                    <span id="buy-tile-rent" class="font-bold text-rose-400">$0đ</span>
+                </div>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="closeModal()" class="flex-1 bg-gray-800 hover:bg-gray-755 text-gray-300 font-bold py-2.5 rounded-lg text-sm transition-colors">Bỏ Qua</button>
+                <button onclick="buyProperty()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-lg text-sm transition-all">Thanh Toán</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Build -->
+    <div id="modal-build" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+        <div class="w-full max-w-md bg-gray-900 border border-gray-800 p-6 rounded-xl space-y-4">
+            <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-hammer text-amber-500"></i> Quản Lý Xây Dựng & Nâng Cấp
+                </h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div id="build-list" class="space-y-2 max-h-[300px] overflow-y-auto">
+                <!-- Generated dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Bank / Loans -->
+    <div id="modal-bank" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+        <div class="w-full max-w-md bg-gray-900 border border-gray-800 p-6 rounded-xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-building-columns text-sky-400"></i> Hệ Thống Ngân Hàng Tài Chính
+                </h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 text-xs">
+                <button onclick="takeBankLoan()" class="bg-gray-800 hover:bg-gray-755 p-4 rounded-lg border border-gray-700 text-left space-y-1">
+                    <h4 class="font-bold text-sky-400">Vay Ngân Hàng</h4>
+                    <p class="text-gray-400">Nhận vay 2000đ. Lãi suất định kỳ 5% sau mỗi vòng.</p>
+                </button>
+                <button onclick="takeLoanShark()" class="bg-gray-800 hover:bg-gray-755 p-4 rounded-lg border border-gray-700 text-left space-y-1">
+                    <h4 class="font-bold text-rose-500">Vay Chợ Đen</h4>
+                    <p class="text-gray-400">Nhận khẩn cấp 3000đ. Lãi kép 20%/vòng. Hạn chót 4 vòng — không trả đủ sẽ bị THANH TRỪNG (loại khỏi game)!</p>
+                </button>
+                <button onclick="depositSavings()" class="bg-gray-800 hover:bg-gray-755 p-4 rounded-lg border border-gray-700 text-left space-y-1">
+                    <h4 class="font-bold text-emerald-400">Gửi Tiết Kiệm</h4>
+                    <p class="text-gray-400">Gửi 1500đ kỳ hạn 3 vòng. Nhận lãi đáo hạn 10%.</p>
+                </button>
+                <button id="btn-insurance" onclick="buyInsurance()" class="bg-gray-800 hover:bg-gray-755 p-4 rounded-lg border border-gray-700 text-left space-y-1">
+                    <h4 class="font-bold text-yellow-500">Mua Bảo Hiểm</h4>
+                    <p class="text-gray-400">Phí 15đ/lượt. Bồi hoàn 40% giá trị tài sản khi bị thiên tai tàn phá.</p>
+                </button>
+            </div>
+
+            <!-- Loan Shark Status Box -->
+            <div id="loanshark-status-box" class="hidden bg-red-950/40 border border-red-700 rounded-lg p-3 space-y-2 mt-4">
+                <div class="flex justify-between text-xs">
+                    <span class="text-gray-300">Nợ tín dụng đen hiện tại:</span>
+                    <span id="loanshark-debt-amount" class="font-bold text-red-400">0đ</span>
+                </div>
+                <div class="flex justify-between text-xs">
+                    <span class="text-gray-300">Thời hạn còn lại:</span>
+                    <span id="loanshark-turns-left" class="font-bold text-amber-400">0 vòng</span>
+                </div>
+                <button onclick="repayLoanShark()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg text-xs transition-colors">
+                    Trả Toàn Bộ Nợ Ngay
+                </button>
+            </div>
+
+            <!-- Land mortgage list -->
+            <div class="border-t border-gray-800 pt-4">
+                <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Thế Chấp & Giải Chấp Đất Đai</h4>
+                <div id="mortgage-list" class="space-y-2 max-h-[150px] overflow-y-auto">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <!-- Stock pledge list -->
+            <div class="border-t border-gray-800 pt-4">
+                <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Thế Chấp & Giải Chấp Cổ Phiếu (Hạn 6 lượt, phí chuộc 130%)</h4>
+                <div id="stock-mortgage-list" class="space-y-2 max-h-[150px] overflow-y-auto">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Deal -->
+    <div id="modal-deal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+        <div class="w-full max-w-lg bg-gray-900 border border-gray-800 p-6 rounded-xl space-y-4">
+            <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-handshake text-emerald-400"></i> Đàm Phán Chuyển Nhượng Thương Mại
+                </h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Chọn đối tác đàm phán</label>
+                    <select id="select-partner" onchange="updateDealPropsUI()" class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg p-2.5 text-xs focus:outline-none">
+                        <!-- Populated by JS -->
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Bạn Chuyển Đi (Tiền Mặt)</label>
+                        <input id="trade-offer-cash" type="number" value="0" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs font-mono text-emerald-400"/>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Bạn Đòi Hỏi (Tiền Mặt)</label>
+                        <input id="trade-req-cash" type="number" value="0" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs font-mono text-amber-500"/>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 text-xs">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Tài sản đất của bạn</label>
+                        <div id="trade-my-props" class="bg-gray-950 p-2 rounded-lg max-h-[100px] overflow-y-auto space-y-1">
+                            <!-- JS populated -->
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Tài sản đất đối tác</label>
+                        <div id="trade-partner-props" class="bg-gray-950 p-2 rounded-lg max-h-[100px] overflow-y-auto space-y-1 text-gray-500 italic">
+                            Vui lòng chọn đối tác đàm phán trước
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="sendTradeProposal()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-4 rounded-lg text-sm transition-colors">
+                    Gửi Lời Đề Nghị Giao Dịch
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Stock Market -->
+    <div id="modal-stocks" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+        <div class="w-full max-w-lg bg-gray-900 border border-gray-800 p-6 rounded-xl space-y-4">
+            <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-chart-line text-rose-500"></i> Bảng Khớp Lệnh Chứng Khoán
+                </h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <div class="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 text-xs flex justify-between items-center">
+                <span>Giai đoạn vĩ mô hiện tại:</span>
+                <span id="stock-economy-cycle" class="font-bold text-yellow-500">---</span>
+            </div>
+
+            <div id="stocks-list" class="space-y-3">
+                <!-- Rendered dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Commodities Market -->
+    <div id="modal-commodities" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+        <div class="w-full max-w-lg bg-gray-900 border border-gray-800 p-6 rounded-xl space-y-4">
+            <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-wheat-awn text-amber-500"></i> Thị Trường Hàng Hóa
+                </h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <p class="text-xs text-gray-500">Chỉ có thể BÁN hàng hóa đã khai thác được. Giá dao động trong biên độ ±50% quanh mức gốc 600đ.</p>
+            <div id="commodities-list" class="space-y-3"></div>
+        </div>
+    </div>
+
+    <!-- Modal: Personal Assets -->
+    <div id="modal-assets" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+        <div class="w-full max-w-md bg-gray-900 border border-gray-800 p-6 rounded-xl space-y-4">
+            <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-wallet text-indigo-400"></i> Báo Cáo Chi Tiết Tài Sản
+                </h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <div class="space-y-3 text-xs font-mono">
+                <div class="bg-gray-950 p-4 rounded-lg space-y-2 border border-gray-800">
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Số dư tiền mặt:</span>
+                        <span id="asset-cash" class="font-bold text-amber-500">$0đ</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Tổng tài sản ròng:</span>
+                        <span id="asset-networth" class="font-bold text-emerald-400">$0đ</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Trình độ chuyên môn:</span>
+                        <span id="asset-career" class="font-bold text-sky-400">---</span>
+                    </div>
+                </div>
+
+                <div class="bg-gray-950 p-4 rounded-lg space-y-2 border border-gray-800">
+                    <h4 class="font-bold text-gray-300 uppercase text-[10px] tracking-wider border-b border-gray-800 pb-1.5">Tình Trạng Nợ & Tiết Kiệm</h4>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Dư nợ ngân hàng:</span>
+                        <span id="asset-loan-bank" class="font-bold text-rose-500">$0đ</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Dư nợ xã hội đen:</span>
+                        <span id="asset-loan-shark" class="font-bold text-rose-500">$0đ</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Bảo hiểm thiên tai:</span>
+                        <span id="asset-insurance" class="font-bold">---</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Số dư gửi tiết kiệm:</span>
+                        <span id="asset-savings" class="font-bold text-emerald-400">---</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Casino -->
+    <div id="modal-casino" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+        <div class="w-full max-w-sm bg-gray-900 border border-gray-800 p-6 rounded-xl space-y-4">
+            <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-dice text-rose-500"></i> Sòng Bạc Tài Xỉu
+                </h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <div class="space-y-3 text-xs">
+                <p class="text-gray-400 text-center">Thử thách vận may bằng trò chơi Tài Xỉu (3 viên xúc xắc).</p>
+                
+                <div class="grid grid-cols-2 gap-2">
+                    <button id="btn-choice-tai" onclick="selectCasinoChoice('Tài')" class="py-3 rounded-lg font-bold border bg-amber-500 text-gray-950 border-transparent shadow-lg transition-colors">
+                        TÀI (11-18 Điểm)
+                    </button>
+                    <button id="btn-choice-xiu" onclick="selectCasinoChoice('Xỉu')" class="py-3 rounded-lg font-bold border bg-gray-800 border-gray-700 text-white transition-colors">
+                        XỈU (3-10 Điểm)
+                    </button>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Số tiền đặt cược (đ)</label>
+                    <input 
+                        id="input-casino-bet" 
+                        type="number" 
+                        placeholder="Nhập số tiền cược..." 
+                        min="1"
+                        class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg p-2.5 font-mono text-center focus:outline-none focus:ring-2 focus:ring-rose-500"
+                    />
+                </div>
+
+                <button onclick="playCasino()" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-3 rounded-lg text-sm transition-transform active:scale-95">
+                    Bắt Đầu Lắc Xúc Xắc
+                </button>
+
+                <!-- Hidden Result placeholder inside DOM -->
+                <div id="casino-result" class="hidden bg-gray-950 border border-gray-800 p-3 rounded-lg text-center font-bold text-yellow-400">
+                    <!-- Results -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: School -->
+    <div id="modal-school" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+        <div class="w-full max-w-sm bg-gray-900 border border-gray-800 p-6 rounded-xl space-y-4">
+            <div class="text-center">
+                <span class="text-xs font-bold text-indigo-400 tracking-widest uppercase">Học Viện Đào Tạo</span>
+                <h3 class="text-xl font-bold mt-1 text-white">Thăng Tiến Năng Lực</h3>
+            </div>
+
+            <div class="bg-gray-950 p-4 rounded-lg space-y-2 text-xs border border-gray-800 leading-relaxed text-gray-300">
+                <p>Học phí nâng ngạch: <strong class="text-white">$1000đ</strong></p>
+                <p>Tỷ lệ thi đỗ chứng chỉ năng lực: <strong class="text-emerald-400">70%</strong></p>
+                <p>Nâng bậc nghề nghiệp giúp tăng lương nhận được mỗi khi đi qua ô xuất phát (START).</p>
+                <p class="mt-2 text-gray-500 italic">Nếu thi trượt, bạn không được thăng cấp sự nghiệp và mất học phí.</p>
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="closeModal()" class="flex-1 bg-gray-800 hover:bg-gray-755 text-gray-300 font-bold py-2.5 rounded-lg text-sm transition-colors">Bỏ Qua</button>
+                <button onclick="studyCareer()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 rounded-lg text-sm transition-all">Đóng Phí & Học</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Tile Info -->
+    <div id="modal-tile-info" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+        <div class="w-full max-w-sm bg-gray-900 border border-gray-800 p-6 rounded-xl space-y-4">
+            <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+                <h3 class="text-md font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-map-location-dot text-amber-500"></i> Thông Tin Chi Tiết Ô Đất
+                </h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="text-center bg-gray-950 p-4 rounded-lg border border-gray-800">
+                <h4 id="tile-info-name" class="text-xl font-extrabold text-amber-400">---</h4>
+                <div class="grid grid-cols-2 gap-2 mt-3 text-xs font-mono text-left">
+                    <div><span class="text-gray-400">Giá mua:</span> <span id="tile-info-cost" class="font-bold text-emerald-400">0đ</span></div>
+                    <div><span class="text-gray-400">Phí thuê gốc:</span> <span id="tile-info-rent-base" class="font-bold text-rose-400">0đ</span></div>
+                </div>
+            </div>
+            <!-- Owner box -->
+            <div id="tile-info-owner-box" class="hidden bg-gray-950 p-3 rounded-lg border border-gray-800 text-xs space-y-1">
+                <p class="text-gray-400">Chủ sở hữu: <strong id="tile-info-owner-name" class="text-white">---</strong></p>
+                <p class="text-gray-400">Cấp độ xây dựng: <strong id="tile-info-houses" class="text-white">---</strong></p>
+                <p class="text-gray-400">Trạng thái: <strong id="tile-info-mortgaged" class="text-rose-400">---</strong></p>
+            </div>
+            <!-- Rent level table -->
+            <div class="space-y-1 bg-gray-950 p-3 rounded-lg border border-gray-800">
+                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Bảng giá thuê theo cấp độ</p>
+                <div id="tile-info-rent-table" class="space-y-1">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+            <!-- Resource Extraction button if owner lands and matches turn -->
+            <div id="tile-info-extract-action" class="hidden pt-2"></div>
+            <!-- Buy Now button if landing and matching turn -->
+            <div id="tile-info-buy-action" class="hidden pt-2">
+                <button onclick="buyProperty(); closeModal();" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-lg text-sm transition-colors flex items-center justify-center gap-1.5 shadow-lg">
+                    <i class="fa-solid fa-cart-shopping"></i> MUA NGAY BẤT ĐỘNG SẢN
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Tile Explain -->
+    <div id="modal-tile-explain" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+        <div class="w-full max-w-sm bg-gray-900 border border-gray-800 p-6 rounded-xl space-y-4">
+            <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+                <h3 class="text-md font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-circle-info text-sky-400"></i> Cơ Chế Hoạt Động Ô Đặc Biệt
+                </h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="text-center space-y-2">
+                <h4 id="tile-explain-name" class="text-lg font-extrabold text-sky-400 uppercase">---</h4>
+                <p id="tile-explain-text" class="text-xs text-gray-300 leading-relaxed bg-gray-950 p-4 rounded-lg border border-gray-800 text-left">---</p>
+            </div>
+            <button onclick="closeModal()" class="w-full bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold py-2 rounded-lg text-xs transition-colors">
+                Đóng thông báo
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal: Political System -->
+    <div id="modal-political" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+        <div class="w-full max-w-md bg-gray-900 border border-gray-800 p-6 rounded-xl space-y-4">
+            <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-landmark text-purple-400"></i> Con Đường Chính Trị
+                </h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div id="political-current-rank" class="bg-gray-950 p-3 rounded-lg text-center">
+                <p class="text-xs text-gray-400">Bậc hiện tại</p>
+                <p class="text-lg font-black text-purple-400">---</p>
+            </div>
+            <div id="political-action-box" class="space-y-2"></div>
+            <p class="text-[10px] text-gray-500 italic">Cứ mỗi 4 vòng, tất cả Ứng Viên Tổng Thống sẽ có 20% cơ hội đắc cử. Người đắc cử sẽ có quyền quyết định kết thúc cả ván đấu.</p>
+        </div>
+    </div>
+
+    <!-- Modal: President Decision -->
+    <div id="modal-president-decision" class="hidden fixed inset-0 bg-black/95 flex items-center justify-center p-4 z-[80]">
+        <div class="w-full max-w-lg bg-gradient-to-b from-purple-950 to-black border-4 border-purple-600 p-8 rounded-2xl space-y-4 text-center shadow-2xl">
+            <i class="fa-solid fa-crown text-amber-400 text-6xl"></i>
+            <h2 class="text-xl font-black text-amber-400 uppercase">BẠN ĐÃ ĐẮC CỬ TỔNG THỐNG!</h2>
+            <p class="text-sm text-gray-300">Quyền lực tối thượng nằm trong tay bạn. Hãy chọn số phận cho cả ván đấu này:</p>
+            <div class="space-y-2">
+                <button onclick="presidentDecide('war')" class="w-full bg-red-700 hover:bg-red-600 text-white font-bold py-3 rounded-lg text-sm text-left px-4">
+                    ⚔️ Phát Động Chiến Tranh Toàn Diện<br><span class="text-[10px] font-normal text-red-200">Kinh tế sụp đổ, mọi của cải trở nên vô nghĩa.</span>
+                </button>
+                <button onclick="presidentDecide('nationalize')" class="w-full bg-orange-700 hover:bg-orange-600 text-white font-bold py-3 rounded-lg text-sm text-left px-4">
+                    🏛️ Quốc Hữu Hóa Toàn Bộ Tài Sản<br><span class="text-[10px] font-normal text-orange-200">Nhà nước tịch thu mọi đất đai, tài sản tư nhân bị xóa sổ.</span>
+                </button>
+                <button onclick="presidentDecide('reform')" class="w-full bg-blue-700 hover:bg-blue-600 text-white font-bold py-3 rounded-lg text-sm text-left px-4">
+                    📜 Cải Cách Kinh Tế Cực Đoan<br><span class="text-[10px] font-normal text-blue-200">Phân phối lại toàn bộ của cải đồng đều cho tất cả mọi người.</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Game Ended -->
+    <div id="modal-game-ended" class="hidden fixed inset-0 bg-black flex items-center justify-center p-4 z-[90]">
+        <div class="w-full max-w-lg bg-gradient-to-b from-gray-900 to-black border-4 border-amber-600 p-8 rounded-2xl space-y-4 text-center shadow-2xl">
+            <i class="fa-solid fa-flag-checkered text-amber-400 text-6xl"></i>
+            <h2 id="ending-scenario-title" class="text-xl font-black text-amber-400 uppercase">---</h2>
+            <p id="ending-scenario-body" class="text-sm text-gray-300 leading-relaxed text-left whitespace-pre-line">---</p>
+            <p class="text-xs text-gray-500 italic pt-2">Ván đấu đã kết thúc. Cảm ơn các bạn đã chơi!</p>
+        </div>
+    </div>
+
+    <!-- Modal: Event Popup -->
+    <div id="modal-event-popup" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[60]">
+        <div class="w-full max-w-sm bg-gray-900 border border-gray-800 p-6 rounded-xl space-y-4 text-center">
+            <h3 id="event-popup-title" class="text-lg font-bold text-amber-500">---</h3>
+            <p id="event-popup-text" class="text-xs text-gray-300 leading-relaxed whitespace-pre-line">---</p>
+            <button onclick="closeEventPopup()" class="w-full bg-amber-500 hover:bg-amber-600 text-gray-900 font-bold py-2 rounded-lg text-xs transition-colors">Đóng</button>
+        </div>
+    </div>
+
+    <!-- Modal: Loan Shark Death -->
+    <div id="modal-loanshark-death" class="hidden fixed inset-0 bg-black/95 flex items-center justify-center p-4 z-[70]">
+        <div class="w-full max-w-md bg-red-950 border border-red-800 p-8 rounded-2xl text-center space-y-4 shadow-2xl">
+            <i class="fa-solid fa-skull-crossbones text-red-500 text-6xl animate-pulse"></i>
+            <h2 id="loanshark-death-title" class="text-xl font-black text-red-400 uppercase">---</h2>
+            <p id="loanshark-death-body" class="text-sm text-gray-300 leading-relaxed text-left whitespace-pre-line">---</p>
+            <button onclick="closeModal();" class="w-full bg-gray-800 hover:bg-gray-775 text-white font-bold py-2.5 rounded-lg text-sm transition-colors">Chấp nhận số phận</button>
+        </div>
+    </div>
+
+    <!-- Modal: Bankruptcy Ending -->
+    <div id="modal-bankruptcy-ending" class="hidden fixed inset-0 bg-black/90 flex items-center justify-center p-4 z-[70]">
+        <div class="w-full max-w-md bg-gray-900 border border-gray-800 p-8 rounded-2xl text-center space-y-4 shadow-2xl">
+            <i class="fa-solid fa-arrow-down-minus-sign text-amber-500 text-6xl"></i>
+            <h2 id="bankruptcy-ending-title" class="text-xl font-black text-amber-400 uppercase">---</h2>
+            <p id="bankruptcy-ending-body" class="text-sm text-gray-300 leading-relaxed text-left whitespace-pre-line">---</p>
+            <button onclick="closeModal();" class="w-full bg-gray-800 hover:bg-gray-700 text-white font-bold py-2.5 rounded-lg text-sm transition-colors">Đóng</button>
+        </div>
+    </div>
+
+    <!-- Modal: Railroad Network -->
+    <div id="modal-railroad-network" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+        <div class="w-full max-w-sm bg-gray-900 border border-gray-800 p-6 rounded-xl space-y-4">
+            <div class="text-center">
+                <i class="fa-solid fa-train text-sky-400 text-3xl"></i>
+                <h3 class="text-lg font-bold text-white mt-2">Mạng Lưới Ga Tàu</h3>
+                <p class="text-xs text-gray-400 mt-1">Bạn đang ở một ga tàu thuộc sở hữu của mình. Di chuyển miễn phí tới ga khác?</p>
+            </div>
+            <div id="railroad-network-list" class="space-y-2"></div>
+            <button onclick="closeModal()" class="w-full bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold py-2.5 rounded-lg text-sm">
+                Ở Lại Đây
+            </button>
+        </div>
+    </div>
+
+    <!-- --- JAVASCRIPT LOGIC --- -->
+    <script type="module">
+        // Import Firebase SDKs
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
+        import { getDatabase, ref, set, get, onValue, update, remove, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        // Firebase Configuration
+        const firebaseConfig = {
+          apiKey: "AIzaSyCoJzXgozZnqwhbXvFeaFPVMQHHDb1Yeyk",
+          authDomain: "monopoly-891cd.firebaseapp.com",
+          databaseURL: "https://monopoly-891cd-default-rtdb.asia-southeast1.firebasedatabase.app",
+          projectId: "monopoly-891cd",
+          storageBucket: "monopoly-891cd.firebasestorage.app",
+          messagingSenderId: "1005228498579",
+          appId: "1:1005228498579:web:45415348022c5a8bacf766",
+          measurementId: "G-50JVJMW8P6"
+        };
+
+        // Singleton Initialization
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const db = getDatabase(app);
+
+        const AVATARS = ["🧑‍💼", "👩‍💼", "👨‍🎨", "👩‍🎤", "👨‍🚀", "👩‍🚒", "👮", "🕵️", "🧙", "🧝"];
+        
+        const POLITICAL_RANKS = [
+            { level: 0, name: "Thường Dân" },
+            { level: 1, name: "Ứng Viên Hội Đồng" },
+            { level: 2, name: "Nghị Sĩ Địa Phương" },
+            { level: 3, name: "Thị Trưởng" },
+            { level: 4, name: "Ứng Viên Tổng Thống" }
+        ];
+
+        const RAILROAD_TILES = [5, 15, 25, 35];
+
+        // --- CHU KỲ KINH TẾ VĨ MÔ MỚI ---
+        const ECONOMY_PHASES = ["Hồi Phục", "Tăng Trưởng", "Suy Thoái", "Đại Khủng Hoảng"];
+
+        const ECONOMY_DURATION = {
+            "Hồi Phục": { min: 6, max: 15 },
+            "Tăng Trưởng": { min: 4, max: 12 },
+            "Suy Thoái": { min: 2, max: 8 },
+            "Đại Khủng Hoảng": { min: 2, max: 6 }
+        };
+
+        const PHASE_SHOCK = {
+            "Tăng Trưởng": { TECH: [0.40, 0.50], RESORT: [0.20, 0.25], STAPLE: [0.05, 0.10] },
+            "Suy Thoái": { TECH: [-0.35, -0.25], RESORT: [-0.20, -0.15], STAPLE: [-0.08, -0.05] },
+            "Đại Khủng Hoảng": { TECH: [-0.80, -0.70], RESORT: [-0.50, -0.40], STAPLE: [-0.20, -0.15] },
+            "Hồi Phục": { TECH: [0.10, 0.15], RESORT: [0.05, 0.10], STAPLE: [-0.02, 0.02] }
+        };
+
+        // --- CƠ CHẾ HÀNG HÓA & TÀI NGUYÊN ---
+        const COMMODITIES_BASE_PRICE = {
+            RICE: 600,
+            OIL: 600,
+            DIAMOND: 600
+        };
+
+        const RESOURCE_TILES = {
+            26: "RICE",     // Nông Trại Hữu Cơ
+            27: "OIL",      // Mỏ Dầu
+            29: "DIAMOND"   // Mỏ Kim Cương
+        };
+
+        const COMMODITY_LABELS = {
+            RICE: { name: "Lúa", unit: "tấn" },
+            OIL: { name: "Dầu Mỏ", unit: "tấn" },
+            DIAMOND: { name: "Kim Cương", unit: "kg" }
+        };
+
+        function checkPhaseTransition(currentPhase, turnsInPhase) {
+            const r1 = Math.random();
+            const r2 = Math.random();
+
+            if (currentPhase === "Hồi Phục") {
+                if (r1 < 0.15) return "Tăng Trưởng";
+                if (r2 < 0.08) return "Suy Thoái";
+            } else if (currentPhase === "Tăng Trưởng") {
+                const growingRisk = 0.10 + Math.floor(turnsInPhase / 3) * 0.01;
+                if (r1 < Math.min(growingRisk, 0.35)) return "Suy Thoái";
+                if (r2 < 0.03) return "Đại Khủng Hoảng";
+            } else if (currentPhase === "Suy Thoái") {
+                if (r1 < 0.12) return "Đại Khủng Hoảng";
+                if (r2 < 0.15) return "Hồi Phục";
+            } else if (currentPhase === "Đại Khủng Hoảng") {
+                if (r1 < 0.12) return "Hồi Phục";
+            }
+            return null;
+        }
+
+        function getUpProbabilityByPhase(stockType, phase) {
+            const table = {
+                "Tăng Trưởng": { TECH: 0.80, RESORT: 0.70, STAPLE: 0.55 },
+                "Suy Thoái":   { TECH: 0.20, RESORT: 0.30, STAPLE: 0.45 },
+                "Đại Khủng Hoảng": { TECH: 0.05, RESORT: 0.10, STAPLE: 0.35 },
+                "Hồi Phục":    { TECH: 0.55, RESORT: 0.50, STAPLE: 0.50 }
+            };
+            return table[phase][stockType];
+        }
+
+        function getBlendedUpProbability(stockType, currentPhase, pending) {
+            const currentProb = getUpProbabilityByPhase(stockType, currentPhase);
+            if (!pending) return currentProb;
+
+            const targetProb = getUpProbabilityByPhase(stockType, pending.targetPhase);
+            const progress = 1 - (pending.turnsRemaining / pending.windowLength);
+            return currentProb + (targetProb - currentProb) * progress * 0.5;
+        }
+
+        function applyPhaseShock(targetPhase, stocks) {
+            const shockConfig = PHASE_SHOCK[targetPhase];
+            ["TECH", "RESORT", "STAPLE"].forEach(sym => {
+                const [minPct, maxPct] = shockConfig[sym];
+                const pct = minPct + Math.random() * (maxPct - minPct);
+                let newPrice = Math.round(stocks[sym].price * (1 + pct));
+                if (newPrice < 10) newPrice = 10;
+                stocks[sym].price = newPrice;
+                if (!stocks[sym].trend) stocks[sym].trend = [];
+                stocks[sym].trend.push(newPrice);
+                if (stocks[sym].trend.length > 5) stocks[sym].trend.shift();
+            });
+            return stocks;
+        }
+
+        function triggerStockFluctuations(currentStocks, phase, pendingTransition) {
+            const nextStocks = JSON.parse(JSON.stringify(currentStocks));
+            const assets = ["TECH", "RESORT", "STAPLE"];
+
+            const baseConfig = {
+                TECH:    { minRange: 0.20, maxRange: 0.30 },
+                RESORT:  { minRange: 0.10, maxRange: 0.15 },
+                STAPLE:  { minRange: 0.03, maxRange: 0.05 }
+            };
+
+            const volatilityScale = (phase === "Hồi Phục") ? 0.45 : 1.0;
+
+            assets.forEach(sym => {
+                let price = nextStocks[sym].price;
+                const { minRange, maxRange } = baseConfig[sym];
+                const magnitude = (minRange + Math.random() * (maxRange - minRange)) * volatilityScale;
+
+                const upProb = getBlendedUpProbability(sym, phase, pendingTransition);
+                const direction = Math.random() < upProb ? 1 : -1;
+
+                price = Math.round(price * (1 + direction * magnitude));
+                if (price < 10) price = 10;
+
+                nextStocks[sym].price = price;
+                const history = nextStocks[sym].trend || [];
+                history.push(price);
+                if (history.length > 5) history.shift();
+                nextStocks[sym].trend = history;
+            });
+
+            return nextStocks;
+        }
+
+        // BIẾN ĐỘNG GIÁ HÀNG HÓA (CHẶN BIÊN TRẦN/SÀN ±50% KHỎI 600đ)
+        function triggerCommodityFluctuations(currentCommodities) {
+            const nextCommodities = JSON.parse(JSON.stringify(currentCommodities));
+            const types = ["RICE", "OIL", "DIAMOND"];
+
+            types.forEach(type => {
+                let price = nextCommodities[type] ? nextCommodities[type].price : 600;
+                const basePrice = COMMODITIES_BASE_PRICE[type];
+                const minPrice = Math.round(basePrice * 0.5); // Sàn: 300đ
+                const maxPrice = Math.round(basePrice * 1.5); // Trần: 900đ
+
+                const magnitude = 0.05 + Math.random() * 0.05; // Biến động mỗi lần nhảy: ±5-10%
+                const direction = Math.random() < 0.5 ? 1 : -1;
+
+                price = Math.round(price * (1 + direction * magnitude));
+
+                // Khóa cứng trong biên độ, không bao giờ vượt ra ngoài
+                if (price < minPrice) price = minPrice;
+                if (price > maxPrice) price = maxPrice;
+
+                if (!nextCommodities[type]) nextCommodities[type] = { price: 600, trend: [600] };
+                nextCommodities[type].price = price;
+                const history = nextCommodities[type].trend || [];
+                history.push(price);
+                if (history.length > 5) history.shift();
+                nextCommodities[type].trend = history;
+            });
+
+            return nextCommodities;
+        }
+
+        const TILES = [
+          { index: 0, name: "START (GO)", type: "special", color: "bg-emerald-800 text-white font-bold text-center", cost: 0, rent: 0 },
+          { index: 1, name: "Pizzeria", type: "property", color: "bg-pink-600 text-white", cost: 1000, rent: 100, group: "pink" },
+          { index: 2, name: "Hòm Thư Chung", type: "community", color: "bg-amber-100 text-gray-900" },
+          { index: 3, name: "Cinema", type: "property", color: "bg-pink-600 text-white", cost: 1100, rent: 110, group: "pink" },
+          { index: 4, name: "Thuế Thu Nhập", type: "tax", color: "bg-red-500 text-white", cost: 200 },
+          { index: 5, name: "Ga Tàu", type: "railroad", color: "bg-sky-700 text-white", cost: 1000, rent: 100 },
+          { index: 6, name: "Trạm Dịch Vụ", type: "utility", color: "bg-amber-600 text-white", cost: 1100, rent: 110 },
+          { index: 7, name: "Cơ Hội", type: "chance", color: "bg-orange-200 text-gray-900" },
+          { index: 8, name: "Siêu Thị", type: "property", color: "bg-red-600 text-white", cost: 1200, rent: 120, group: "red" },
+          { index: 9, name: "Cửa Hàng Tiện Lợi", type: "property", color: "bg-red-600 text-white", cost: 1300, rent: 130, group: "red" },
+          { index: 10, name: "NHÀ TÙ (JAIL)", type: "special", color: "bg-gray-800 text-yellow-500 border-2 border-dashed border-yellow-500" },
+          { index: 11, name: "Cảng Biển", type: "property", color: "bg-orange-500 text-white", cost: 1500, rent: 150, group: "orange" },
+          { index: 12, name: "BỆNH VIỆN", type: "hospital", color: "bg-teal-600 text-white font-bold text-center" },
+          { index: 13, name: "Car Salon", type: "property", color: "bg-orange-500 text-white", cost: 1400, rent: 140, group: "orange" },
+          { index: 14, name: "Sân Bay", type: "property", color: "bg-orange-500 text-white", cost: 1300, rent: 130, group: "orange" },
+          { index: 15, name: "Ga Tàu Hải Cảng", type: "railroad", color: "bg-sky-700 text-white", cost: 1000, rent: 100 },
+          { index: 16, name: "Vũ Trường", type: "property", color: "bg-indigo-600 text-white", cost: 1200, rent: 120, group: "indigo" },
+          { index: 17, name: "Hòm Thư Chung", type: "community", color: "bg-amber-100 text-gray-900" },
+          { index: 18, name: "Kênh Truyền Hình", type: "property", color: "bg-indigo-600 text-white", cost: 1700, rent: 170, group: "indigo" },
+          { index: 19, name: "Tòa Soạn Báo", type: "property", color: "bg-indigo-600 text-white", cost: 1600, rent: 160, group: "indigo" },
+          { index: 20, name: "BÃI ĐỖ XE FREE", type: "special", color: "bg-emerald-900 text-white text-center font-bold" },
+          { index: 21, name: "Nhà Máy Đồ Chơi", type: "property", color: "bg-purple-600 text-white", cost: 1900, rent: 190, group: "purple" },
+          { index: 22, name: "Cơ Hội", type: "chance", color: "bg-orange-200 text-gray-900" },
+          { index: 23, name: "Nhà Máy Kẹo", type: "property", color: "bg-purple-600 text-white", cost: 2000, rent: 200, group: "purple" },
+          { index: 24, name: "Trộm Ngân Hàng", type: "special", color: "bg-rose-900 text-white border border-rose-500" },
+          { index: 25, name: "Ga Tàu Cao Tốc", type: "railroad", color: "bg-sky-700 text-white", cost: 1000, rent: 100 },
+          { index: 26, name: "Nông Trại Hữu Cơ", type: "property", color: "bg-green-600 text-white", cost: 2100, rent: 210, group: "green" },
+          { index: 27, name: "Mỏ Dầu", type: "property", color: "bg-green-600 text-white", cost: 2200, rent: 220, group: "green" },
+          { index: 28, name: "Nhà Máy Nước", type: "utility", color: "bg-amber-600 text-white", cost: 1150, rent: 115 },
+          { index: 29, name: "Mỏ Kim Cương", type: "property", color: "bg-green-600 text-white", cost: 2500, rent: 250, group: "green" },
+          { index: 30, name: "VÀO TÙ", type: "special", color: "bg-red-800 text-white text-center font-bold" },
+          { index: 31, name: "Hollywood", type: "property", color: "bg-yellow-600 text-white", cost: 2400, rent: 240, group: "yellow" },
+          { index: 32, name: "Nhà Máy Điện Tử", type: "property", color: "bg-yellow-600 text-white", cost: 2500, rent: 250, group: "yellow" },
+          { index: 33, name: "Hòm Thư Chung", type: "community", color: "bg-amber-100 text-gray-900" },
+          { index: 34, name: "Sòng Bạc (Casino)", type: "casino", color: "bg-red-700 text-white font-bold" },
+          { index: 35, name: "Ga Tàu Liên Tỉnh", type: "railroad", color: "bg-sky-700 text-white", cost: 1000, rent: 100 },
+          { index: 36, name: "Cơ Hội", type: "chance", color: "bg-orange-200 text-gray-900" },
+          { index: 37, name: "Trường Học", type: "school", color: "bg-blue-700 text-white font-bold" },
+          { index: 38, name: "Thuế Đặc Biệt", type: "tax", color: "bg-red-500 text-white", cost: 150 },
+          { index: 39, name: "Khu Nghỉ Dưỡng", type: "property", color: "bg-blue-600 text-white", cost: 3500, rent: 350, group: "blue" },
+        ];
+
+        const TILE_EXPLANATIONS = {
+            chance: "Ô Cơ Hội: khi dừng chân tại đây, bạn sẽ rút ngẫu nhiên 1 thẻ sự kiện. Thẻ có thể thưởng tiền, phạt tiền, hoặc không có tác động gì.",
+            community: "Ô Hòm Thư Chung: tương tự Cơ Hội, rút ngẫu nhiên 1 thẻ sự kiện ảnh hưởng tới tài chính của bạn.",
+            tax: "Ô Thuế: bạn bắt buộc phải nộp một khoản thuế cố định cho ngân sách chung khi dừng chân tại đây.",
+            school: "Trường Học: trả học phí để nâng cấp trình độ nghề nghiệp, tăng lương nhận được mỗi khi đi qua ô Start. Có 30% khả năng thi trượt và mất học phí.",
+            casino: "Sòng Bạc: đặt cược tiền mặt vào trò Tài Xỉu, tỷ lệ thắng 30%, thắng nhận gấp đôi tiền cược, thua mất trắng.",
+            jail: "Nhà Tù: nếu bạn bị đưa vào đây, phải chờ đủ số lượt quy định hoặc đóng tiền phạt / đổ được xúc xắc đôi mới được ra ngoài.",
+            goToJail: "Vào Tù: dừng chân tại đây, bạn sẽ bị chuyển thẳng vào Nhà Tù ngay lập tức.",
+            start: "Ô Xuất Phát (START): mỗi khi đi qua hoặc dừng chân tại đây, bạn nhận được một khoản lương theo cấp bậc nghề nghiệp hiện tại.",
+            freeParking: "Bãi Đỗ Xe Miễn Phí: không có tác động gì đặc biệt, chỉ đơn giản là điểm nghỉ chân an toàn.",
+            hospital: "Bệnh Viện: đây là nơi điều trị khi bạn gặp tai nạn từ thẻ Cơ Hội/Khí Vận. Có 3 cấp độ thương tật (Nhẹ, Trung Bình, Nghiêm Trọng) với mức viện phí khác nhau. Bạn sẽ được tự động đưa vào đây và thanh toán viện phí ngay khi gặp tai nạn, không có ảnh hưởng nào khác tới lượt chơi tiếp theo."
+        };
+
+        const LOANSHARK_DEATH_MESSAGES = [
+            {
+                title: "KHOẢN NỢ ĐÃ ĐƯỢC THANH TOÁN... BẰNG MÁU.",
+                body: "4 vòng. Đó là tất cả thời gian chúng tôi cho phép. Bạn đã chọn im lặng thay vì trả nợ, và giờ đây cái giá phải trả không còn là tiền bạc nữa. Đàn em của tổ chức đã tìm đến đúng địa chỉ, đúng thời điểm — không một lời cảnh báo thứ hai. Trò chơi của bạn kết thúc tại đây. Vĩnh viễn."
+            },
+            {
+                title: "ĐÊM ĐÓ, KHÔNG AI NGHE THẤY TIẾNG SÚNG.",
+                body: "Con hẻm sau lưng \"Sòng Bạc\" tối om như mọi khi. Bạn nghĩ mình còn thời gian để xoay sở, nhưng tín dụng đen không bao giờ chờ đợi ai. Khoản nợ 4 vòng đã đến hạn, và câu trả lời duy nhất bạn đưa ra là sự im lặng. Đó là câu trả lời sai lầm cuối cùng trong đời bạn. Trò chơi kết thúc — vĩnh viễn, không có màn tiếp theo."
+            },
+            {
+                title: "\"TAO ĐÃ NÓI RỒI MÀ. 4 VÒNG. KHÔNG HƠN.\"",
+                body: "Bạn không trả. Chúng tôi không tha. Đó là luật duy nhất trong thế giới ngầm này, và luật đó không có ngoại lệ — kể cả với bạn. Từ giờ, tên bạn chỉ còn là một dòng trong sổ nợ đã \"xử lý xong\". Trò chơi của bạn chính thức khép lại tại đây."
+            },
+            {
+                title: "XÁC NHẬN: HỢP ĐỒNG ĐÃ HOÀN TẤT.",
+                body: "Bốn vòng trôi qua, lãi mẹ đẻ lãi con, và bạn vẫn chọn cách trốn tránh thay vì đối mặt. Tổ chức tín dụng đen không đòi nợ bằng lời nói — họ đòi bằng hành động. Tin tức về \"vụ việc\" của bạn giờ đây sẽ lan khắp bàn cờ, như một lời nhắc nhở cho những ai còn đang nợ nần: đừng bao giờ thử thách sự kiên nhẫn của kẻ cho vay. Trò chơi của bạn dừng lại tại đây."
+            }
+        ];
+
+        const BANKRUPTCY_ENDING_MESSAGES = [
+            {
+                title: "KHI DÒNG TIỀN CUỐI CÙNG CẠN KIỆT...",
+                body: "Bạn từng sở hữu những mảnh đất, những khoản đầu tư đầy tham vọng. Nhưng thị trường không chờ đợi ai, và những con số đỏ cứ thế lớn dần cho tới khi không còn gì để cứu vãn. Đây không phải là thất bại — chỉ là một ván cờ đã đến hồi kết. Cảm ơn bạn đã chiến đấu tới cùng."
+            },
+            {
+                title: "\"TIỀN BẠC KHÔNG CÓ CẢM XÚC. CHỈ CON NGƯỜI MỚI CÓ — VÀ ĐÓ LÀ ĐIỂM YẾU CỦA HỌ.\"",
+                body: "Bạn đã đặt cược quá nhiều vào những thứ không thể kiểm soát. Giờ đây, khi số dư về 0, không ai đến để an ủi bạn cả. Cuộc chơi tiếp tục — nhưng không phải với bạn."
+            },
+            {
+                title: "PHẢI CÔNG NHẬN, BẠN PHÁ SẢN MỘT CÁCH RẤT... ẤN TƯỢNG.",
+                body: "Không phải ai cũng đủ \"tài năng\" để biến một khởi đầu thuận lợi thành con số âm chỉ sau vài chục vòng. Xin chúc mừng — bạn vừa lập kỷ lục mới cho chính mình."
+            },
+            {
+                title: "AI ĐÓ TỪNG NÓI \"LIỀU ĂN NHIỀU\". HỌ QUÊN NÓI PHẦN SAU: \"VÀ CŨNG CÓ THỂ ĂN ĐỦ.\"",
+                body: "Bạn đã chọn liều. Con số cuối cùng đã trả lời thay cho mọi lời biện minh. Rời bàn cờ đi — không ai giữ chân bạn cả."
+            }
+        ];
+
+        const INJURY_CARDS = [
+            { name: "Trượt chân trong nhà tắm", severity: 1 },
+            { name: "Vấp ngã khi xuống cầu thang", severity: 1 },
+            { name: "Bong gân nhẹ khi chơi thể thao", severity: 1 },
+            { name: "Tai nạn giao thông nhẹ", severity: 2 },
+            { name: "Va chạm xe máy trên đường đi làm", severity: 2 },
+            { name: "Bị vật rơi trúng người tại công trường", severity: 2 },
+            { name: "Tai nạn giao thông nghiêm trọng", severity: 3 },
+            { name: "Sập giàn giáo công trình", severity: 3 },
+            { name: "Tai nạn giao thông nghiêm trọng trên cao tốc", severity: 3 }
+        ];
+
+        const INJURY_FEE_BY_SEVERITY = {
+            1: 400,
+            2: 1000,
+            3: 2500
+        };
+
+        const HOSPITAL_TILE_INDEX = 12;
+
+        const COMMUNITY_NEWS = [
+            "Chuyên gia kinh tế dự đoán thị trường sẽ 'biến động mạnh' trong tuần tới — dự đoán này đúng với mọi tuần, mọi năm.",
+            "Khảo sát cho thấy 9/10 người chơi cờ tỷ phú tin rằng mình sẽ thắng ván này. Người thứ 10 đang đọc mẩu tin này.",
+            "Ngân hàng trung ương thông báo: 'Chúng tôi đang theo dõi sát sao tình hình.' Không ai biết chính xác điều đó nghĩa là gì.",
+            "Một chú mèo hàng xóm vừa được bầu chọn là 'Nhân vật gây xao nhãng nhất tuần' tại khu Phố Tài Chính.",
+            "Quán cà phê góc phố thông báo tăng giá thêm 2.000đ vì 'lạm phát tâm lý'.",
+            "Người dân khu vực Sòng Bạc phản ánh: đèn neon sáng suốt đêm khiến không ai ngủ được, kể cả những người đã phá sản.",
+            "Nguồn tin giấu tên tiết lộ: một 'nhà đầu tư' vừa được nhìn thấy đang đếm tiền lẻ ở Sòng Bạc lúc 3 giờ sáng.",
+            "Có tin đồn một 'chủ nợ' trong khu vực đang tìm kiếm... một cái tên mới nghe thân thiện hơn.",
+            "Cảnh sát kinh tế xác nhận: không có gì bất thường xảy ra hôm nay. Điều này bản thân nó đã rất bất thường.",
+            "Nghiên cứu mới chỉ ra: người hay than thở về tiền bạc thường... vẫn tiếp tục than thở dù giàu hay nghèo.",
+            "Bản tin thời tiết: trời hôm nay đẹp, phù hợp để đi mua đất — hoặc phù hợp để ở nhà tiết kiệm tiền.",
+            "Một cụ già 80 tuổi tại khu Ga Tàu chia sẻ bí quyết sống thọ: 'Đừng bao giờ vay xã hội đen.'",
+            "Hội đồng thành phố họp bàn 3 tiếng về việc có nên sơn lại vạch kẻ đường. Kết luận: để hôm khác họp tiếp.",
+            "Một người chơi giấu tên tuyên bố đã tìm ra 'chiến lược thắng chắc chắn'. Anh ta hiện đang nợ ngân hàng 5000đ.",
+            "Bản tin đặc biệt: hôm nay không có bản tin đặc biệt nào cả.",
+            "Một tỷ phú công nghệ nổi tiếng vừa tuyên bố sẽ chuyển trụ sở mạng xã hội của mình lên Sao Hỏa vì 'không khí ở đó sạch hơn'. Nhà đầu tư đang hoang mang không biết nên gửi hồ sơ ứng tuyển hay đặt vé máy bay một chiều.",
+            "Một vị tổng thống vừa đề xuất đánh thuế 100% lên các mặt hàng 'không làm ông thấy vui'. Các thương nhân trên bàn cờ hiện đang nỗ lực... khen ngợi ông hết lời để tránh bị phá sản.",
+            "Hai nguyên thủ quốc gia vừa ký kết hiệp ước hòa bình sau 3 giờ đàm phán căng thẳng. Nội dung hiệp ước chủ ước là về việc... ai sẽ là người trả tiền hóa đơn bữa tối thịnh soạn sau đó.",
+            "Tàu chở dầu tại một eo biển trọng yếu đang di chuyển chậm như rùa vì thuyền trưởng bận... tránh chụp ảnh vệ tinh. Giá xăng trên bàn cờ tăng vọt, trong khi các hãng vận tải thì than nghèo kể khổ.",
+            "Hai cường quốc tuyên bố ngừng bắn sau khi nhận ra rằng... cả hai đều đang dùng chung một hệ thống vệ tinh của cùng một tập đoàn tư nhân. Cuộc chiến tạm hoãn vì 'lỗi đường truyền'.",
+            "Một hãng công nghệ lớn đổi CEO mới, người này cam kết sẽ làm ra chiếc điện thoại chỉ có một nút bấm để... tiết kiệm thời gian cho người dùng. Các nhà đầu tư đang cân nhắc việc quay lại dùng điện thoại 'cục gạch'.",
+            "Một danh sách dài các nhân vật quyền lực vừa bị lộ vì... quên xóa lịch sử trình duyệt. Thị trường đang rung lắc dữ dội, còn giới luật sư thì đang 'bội thu' chưa từng có.",
+            "Một chân sút nổi tiếng vừa lập kỷ lục cho pha ghi bàn 'tâm linh': Bóng đập vào... cọng tóc của anh rồi bay vào lưới. Sau đó anh vẫn chạy ra góc sân, nhảy lên, xoay người và hét vang như thể vừa solo từ sân nhà rồi dứt điểm vào góc chết. Đồng đội đứng nhìn ngán ngẩm, còn fan thì bảo: 'Đẳng cấp thiên tài, không cần sút cũng ghi được bàn'!",
+            "Một chân sút vừa bị lộ clip cố tình... lấy dây giày chạm vào bóng để được công nhận bàn thắng. Anh giải thích: 'Dây giày của tôi cũng có linh hồn, nó cũng muốn có tên trong bảng tỷ số'. Một anti-fan bình luận: 'Lần sau đá bằng lông mi cho đúng chuẩn huyền thoại nhé, chứ đá bằng chân thì thường quá'.",
+            "Một chân sút khác vừa nhận giải 'Khách hàng thân thiết nhất' của giới trọng tài. Các CĐV đối thủ chế meme: 'Chỉ cần anh đứng gần vòng cấm, trọng tài sẽ tự động rút penalty, còn nếu không có penalty, trọng tài sẽ... hỏi ý kiến anh xem có cần thổi phạt không'.",
+            "Một ngôi sao vừa chính thức bổ sung vào hợp đồng điều khoản: 'Mọi đường chuyền hỏng của đồng đội đều phải được giải trình bằng văn bản gửi cho tôi trước khi trận đấu kết thúc'. Đồng đội giờ đây thay vì nhìn bảng chiến thuật, phải nhìn... khuôn mặt của anh xem có đang 'vui' không mới dám sút bóng.",
+            "Một ngôi sao vừa lập cú đúp trong trận đấu mà anh là... cầu thủ, huấn luyện viên, kiêm luôn người điều khiển VAR. Sau khi tự ghi bàn, anh quay sang trọng tài: 'Tôi thấy tôi không việt vị, ông có ý kiến gì không?'. Trọng tài, với sự run rẩy, lập tiếp công nhận bàn thắng.",
+            "Tin đồn một ngôi sao đã yêu cầu CLB thay đổi logo vì cho rằng hình ảnh cũ... 'không hợp phong thủy' với khuôn mặt của anh. Các chuyên gia marketing dự đoán logo đội bóng sẽ được thay bằng... hình ảnh một chú rùa Ninja đang mặc vest tổng thống."
+        ];
+
+        // Global State variables
+        let roomCode = "";
+        let inRoom = false;
+        let playerId = "";
+        let playerName = "";
+        let playerAvatar = AVATARS[0];
+        let gameState = null;
+        let currentActiveModal = "";
+        let localCasinoChoice = "Tài";
+        let dbUnsubscribe = null;
+        let lastHandledPresident = 0;
+
+        // Unique Room Code Generator
+        async function getUniqueRoomCode() {
+            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            let code = "";
+            let isUnique = false;
+            let attempts = 0;
+
+            while (!isUnique && attempts < 10) {
+                code = "";
+                for (let i = 0; i < 6; i++) {
+                    code += chars.charAt(Math.floor(Math.random() * chars.length));
+                }
+                const roomRef = ref(db, `rooms/${code}`);
+                const snapshot = await get(roomRef);
+                if (!snapshot.exists()) {
+                    isUnique = true;
+                } else {
+                    attempts++;
+                    console.log(`Mã phòng ${code} đã tồn tại trên Firebase, đang khởi tạo lại (Lần thử: ${attempts})...`);
+                }
+            }
+            return code;
+        }
+
+        // Initialize Lobby DOM
+        window.addEventListener('DOMContentLoaded', () => {
+            playerId = localStorage.getItem("monopoly_player_id") || "p_" + Math.random().toString(36).substring(2, 9);
+            localStorage.setItem("monopoly_player_id", playerId);
+            
+            // Build Avatars choices list
+            const avatarContainer = document.getElementById("avatar-container");
+            AVATARS.forEach((av, index) => {
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.id = `btn-av-${index}`;
+                btn.innerText = av;
+                btn.className = `text-2xl p-2 rounded-lg border transition-all ${index === 0 ? "bg-amber-500 border-transparent shadow-lg scale-110" : "bg-gray-800 border-gray-700 hover:bg-gray-700"}`;
+                btn.onclick = () => selectAvatar(index, av);
+                avatarContainer.appendChild(btn);
+            });
+
+            buildBoard();
+        });
+
+        function selectAvatar(index, av) {
+            playerAvatar = av;
+            AVATARS.forEach((_, idx) => {
+                const el = document.getElementById(`btn-av-${idx}`);
+                if (el) {
+                    if (idx === index) {
+                        el.className = "text-2xl p-2 rounded-lg border transition-all bg-amber-500 border-transparent shadow-lg scale-110";
+                    } else {
+                        el.className = "text-2xl p-2 rounded-lg border transition-all bg-gray-800 border-gray-700 hover:bg-gray-700";
+                    }
+                }
+            });
+        }
+
+        // Helper function for 11x11 board mapping
+        function getTileIndex(col, row) {
+            if (row === 0) return 20 + col; 
+            if (row === 10) return 10 - col; 
+            if (col === 0) return 20 - row; 
+            if (col === 10) return 30 + row; 
+            return -1; 
+        }
+
+        // Programmatically render 11x11 square board logic
+        function buildBoard() {
+            const board = document.getElementById("board");
+            if (!board) return;
+            board.innerHTML = "";
+
+            for (let row = 0; row < 11; row++) {
+                for (let col = 0; col < 11; col++) {
+                    const tileIndex = getTileIndex(col, row);
+
+                    if (tileIndex === -1) {
+                        // Render central board viewport element inside the grid at top left of inner box
+                        if (row === 1 && col === 1) {
+                            const centerEl = document.createElement("div");
+                            centerEl.className = "col-span-9 row-span-9 flex flex-col items-center justify-center bg-gray-950 rounded-lg p-4 space-y-4 border border-gray-800/50 relative";
+                            centerEl.innerHTML = `
+                                <div class="absolute top-4 left-4 text-left">
+                                    <p class="text-[10px] text-gray-400">Chu kỳ kinh tế</p>
+                                    <h4 id="inner-economy" class="text-sm font-bold text-amber-500">---</h4>
+                                </div>
+                                <div class="absolute top-4 right-4 text-right">
+                                    <p class="text-[10px] text-gray-400">Lượt thi đấu</p>
+                                    <h4 id="inner-turns" class="text-sm font-bold text-sky-400">0 lượt</h4>
+                                </div>
+                                <div class="flex gap-4 my-2">
+                                    <div id="dice-1" class="bg-gray-800 border-2 border-gray-700 w-16 h-16 rounded-xl flex items-center justify-center text-3xl font-black text-amber-400">1</div>
+                                    <div id="dice-2" class="bg-gray-800 border-2 border-gray-700 w-16 h-16 rounded-xl flex items-center justify-center text-3xl font-black text-amber-400">1</div>
+                                </div>
+                                <div id="center-controls" class="w-full max-w-xs space-y-2">
+                                    <!-- Dynamic Action Controls -->
+                                </div>
+                                <div class="grid grid-cols-4 gap-1.5 w-full mt-4 text-center">
+                                    <button onclick="openModal('build')" class="bg-gray-800 hover:bg-gray-775 text-[9px] font-bold p-2 rounded border border-gray-700 flex flex-col items-center gap-1">
+                                        <i class="fa-solid fa-hammer text-amber-500 text-xs"></i>XÂY DỰNG
+                                    </button>
+                                    <button onclick="openModal('bank')" class="bg-gray-800 hover:bg-gray-775 text-[9px] font-bold p-2 rounded border border-gray-700 flex flex-col items-center gap-1">
+                                        <i class="fa-solid fa-building-columns text-sky-500 text-xs"></i>NGÂN HÀNG
+                                    </button>
+                                    <button onclick="openModal('deal')" class="bg-gray-800 hover:bg-gray-775 text-[9px] font-bold p-2 rounded border border-gray-700 flex flex-col items-center gap-1">
+                                        <i class="fa-solid fa-handshake text-emerald-500 text-xs"></i>GIAO DỊCH
+                                    </button>
+                                    <button onclick="openModal('stocks')" class="bg-gray-800 hover:bg-gray-755 text-[9px] font-bold p-2 rounded border border-gray-700 flex flex-col items-center gap-1">
+                                        <i class="fa-solid fa-chart-line text-rose-500 text-xs"></i>CHỨNG KHOÁN
+                                    </button>
+                                    <button onclick="openModal('commodities')" class="bg-gray-800 hover:bg-gray-700 text-[9px] font-bold p-2 rounded border border-gray-700 flex flex-col items-center gap-1">
+                                        <i class="fa-solid fa-wheat-awn text-amber-500 text-xs"></i>HÀNG HÓA
+                                    </button>
+                                    <button onclick="openModal('assets')" class="bg-gray-800 hover:bg-gray-775 text-[9px] font-bold p-2 rounded border border-gray-700 flex flex-col items-center gap-1">
+                                        <i class="fa-solid fa-wallet text-indigo-500 text-xs"></i>TÀI SẢN
+                                    </button>
+                                    <button onclick="openModal('political')" class="bg-gray-800 hover:bg-gray-700 text-[9px] font-bold p-2 rounded border border-gray-700 flex flex-col items-center gap-1">
+                                        <i class="fa-solid fa-landmark text-purple-400 text-xs"></i>CHÍNH TRỊ
+                                    </button>
+                                </div>
+                            `;
+                            board.appendChild(centerEl);
+                        }
+                    } else {
+                        const tile = TILES[tileIndex];
+                        const tileEl = document.createElement("div");
+                        tileEl.id = `tile-${tileIndex}`;
+                        tileEl.className = `relative ${tile.color} p-1 border border-black/30 flex flex-col justify-between overflow-hidden text-[9px] cursor-pointer hover:brightness-110 transition-all`;
+                        tileEl.innerHTML = `
+                            <div class="flex justify-between items-center font-bold">
+                                <span class="truncate max-w-[50px]">${tile.name}</span>
+                                ${tile.cost > 0 ? `<span class="text-gray-200 font-mono">$${tile.cost}</span>` : ""}
+                            </div>
+                            <!-- Owner indicator & stars placement -->
+                            <div id="tile-indicator-${tileIndex}" class="absolute bottom-1 right-1 flex items-center gap-0.5 bg-black/50 px-1 py-0.5 rounded hidden">
+                                <span id="tile-owner-${tileIndex}" class="text-[8px] font-bold">🏢</span>
+                                <span id="tile-stars-${tileIndex}" class="text-[8px] text-yellow-300 font-bold"></span>
+                            </div>
+                            <!-- Player presence indicators placement -->
+                            <div id="tile-tokens-${tileIndex}" class="flex flex-wrap gap-0.5 mt-auto max-h-[14px] overflow-hidden"></div>
+                        `;
+                        if (["property", "railroad", "utility"].includes(tile.type)) {
+                            tileEl.onclick = () => showTileInfo(tileIndex);
+                        } else {
+                            tileEl.onclick = () => showTileExplain(tileIndex);
+                        }
+                        board.appendChild(tileEl);
+                    }
+                }
+            }
+        }
+
+        // Display error trace onto UI directly
+        function showLobbyError(msg) {
+            const errBox = document.getElementById("lobby-error-box");
+            const errText = document.getElementById("lobby-error-text");
+            if (errBox && errText) {
+                if (msg) {
+                    errText.innerText = msg;
+                    errBox.classList.remove("hidden");
+                } else {
+                    errBox.classList.add("hidden");
+                }
+            }
+        }
+
+        // Realtime Room joining / creation
+        async function joinOrCreateRoom(isCreate) {
+            showLobbyError(null); 
+            console.log("---- BẮT ĐẦU TIẾN TRÌNH: " + (isCreate ? "TẠO PHÒNG" : "GIA NHẬP PHÒNG"));
+
+            playerName = document.getElementById("input-player-name").value;
+            if (!playerName.trim()) {
+                alert("Vui lòng điền tên người chơi!");
+                return;
+            }
+
+            let code = "";
+            try {
+                if (isCreate) {
+                    code = await getUniqueRoomCode();
+                } else {
+                    code = document.getElementById("input-room-code").value.trim().toUpperCase();
+                }
+                console.log("Mã phòng xử lý được gán:", code);
+            } catch (err) {
+                console.error("Lỗi sinh mã phòng:", err);
+                showLobbyError("Lỗi hệ thống khi sinh mã phòng: " + err.message);
+                return;
+            }
+
+            if (!code || code.length !== 6) {
+                alert("Mã phòng không hợp lệ (Phải đúng 6 kí tự)!");
+                return;
+            }
+
+            const roomRef = ref(db, `rooms/${code}`);
+            
+            console.log("Đang gửi yêu cầu get() tới databaseURL...");
+            get(roomRef)
+                .then((snapshot) => {
+                    console.log("Phản hồi dữ liệu thành công từ Realtime Database!");
+                    let data = snapshot.val();
+                    
+                    if (isCreate) {
+                        console.log("Tạo cấu trúc dữ liệu phòng mới...");
+                        data = {
+                            roomId: code,
+                            totalTurnsCount: 0,
+                            economyPhase: "Hồi Phục",
+                            economyTurnsInPhase: 0,
+                            economyPendingTransition: null,
+                            currentTurnPlayerId: playerId,
+                            dice: [1, 1],
+                            history: ["Khởi động phòng chơi mới."],
+                            players: {},
+                            stocks: {
+                                TECH: { price: 200, trend: [200] },
+                                RESORT: { price: 500, trend: [500] },
+                                STAPLE: { price: 100, trend: [100] }
+                            },
+                            commodities: {
+                                RICE: { price: 600, trend: [600] },
+                                OIL: { price: 600, trend: [600] },
+                                DIAMOND: { price: 600, trend: [600] }
+                            },
+                            properties: {},
+                            turnsSinceLastElection: 0
+                        };
+                    } else {
+                        if (!data) {
+                            alert("Mã phòng chơi không tồn tại!");
+                            return;
+                        }
+                    }
+
+                    if (Object.keys(data.players || {}).length >= 5) {
+                        alert("Phòng chơi đã đầy người!");
+                        return;
+                    }
+
+                    const newPlayer = {
+                        id: playerId,
+                        name: playerName,
+                        avatar: playerAvatar,
+                        cash: 5000,
+                        netWorth: 5000,
+                        position: 0,
+                        career: { level: "Lao động phổ thông", salary: 200 },
+                        creditScore: 600,
+                        insurance: { active: false, costPerTurn: 10 },
+                        inJail: false,
+                        jailTurnsLeft: 0,
+                        isBankrupt: false,
+                        inDebt: false,
+                        pendingLoanSharkKill: false,
+                        stocks: { TECH: 0, RESORT: 0, STAPLE: 0 },
+                        avgBuyPrices: { TECH: 0, RESORT: 0, STAPLE: 0 },
+                        commodityInventory: { RICE: 0, OIL: 0, DIAMOND: 0 },
+                        pledgedStocks: {
+                            TECH: { qty: 0, loanAmount: 0, turnsLeft: 0 },
+                            RESORT: { qty: 0, loanAmount: 0, turnsLeft: 0 },
+                            STAPLE: { qty: 0, loanAmount: 0, turnsLeft: 0 }
+                        },
+                        loans: { bank: 0, loanShark: 0, loanSharkTurns: 0, loanSharkMaxTurns: 4 },
+                        savings: { amount: 0, rate: 0, dueInTurns: 0 },
+                        hasRolledThisTurn: false,
+                        hasPlayedCasinoThisTurn: false,
+                        politicalRank: 0
+                    };
+
+                    data.players[playerId] = newPlayer;
+
+                    console.log("Đang đồng bộ lệnh ghi set() lên Firebase...");
+                    return set(roomRef, data).then(() => {
+                        console.log("Ghi dữ liệu thành công! Node được tạo lập:", `rooms/${code}`);
+                        
+                        roomCode = code;
+                        inRoom = true;
+                        
+                        // Switch Screens
+                        document.getElementById("screen-lobby").classList.add("hidden");
+                        document.getElementById("screen-game").classList.remove("hidden");
+                        
+                        // Bind active realtime data listener
+                        dbUnsubscribe = onValue(ref(db, `rooms/${roomCode}`), (snap) => {
+                            const state = snap.val();
+                            if (state) {
+                                gameState = state;
+                                renderGame();
+                            } else {
+                                inRoom = false;
+                                document.getElementById("screen-lobby").classList.remove("hidden");
+                                document.getElementById("screen-game").classList.add("hidden");
+                            }
+                        });
+                    });
+                })
+                .catch((error) => {
+                    console.error("LỖI CHI TIẾT KHI KẾT NỐI/TẠO PHÒNG TRÊN FIREBASE:", error);
+                    let hint = `Không kết nối được Firebase Realtime Database. Chi tiết lỗi: ${error.message}`;
+                    showLobbyError(hint);
+                    alert("Không tạo được phòng, vui lòng thử lại:\n\n" + error.message);
+                });
+        }
+
+        function leaveRoom() {
+            if (!confirm("Rời trận chiến hiện tại?")) return;
+            if (dbUnsubscribe) {
+                dbUnsubscribe();
+                dbUnsubscribe = null;
+            }
+            
+            const playerRef = ref(db, `rooms/${roomCode}/players/${playerId}`);
+            remove(playerRef).then(() => {
+                get(ref(db, `rooms/${roomCode}/players`)).then((snap) => {
+                    if (!snap.exists() || snap.numChildren() === 0) {
+                        remove(ref(db, `rooms/${roomCode}`));
+                    } else {
+                        logHistory(`${playerName} rời khỏi phòng chơi.`);
+                    }
+                    inRoom = false;
+                    gameState = null;
+                    document.getElementById("screen-lobby").classList.remove("hidden");
+                    document.getElementById("screen-game").classList.add("hidden");
+                });
+            });
+        }
+
+        // Core Render Game state updates
+        function renderGame() {
+            if (!gameState) return;
+
+            // Kiểm tra trạng thái kết thúc ván đấu
+            if (gameState.gameEnded && gameState.endingScenario) {
+                const endingTitle = document.getElementById("ending-scenario-title");
+                if (endingTitle) endingTitle.innerText = gameState.endingScenario.title;
+                
+                const endingBody = document.getElementById("ending-scenario-body");
+                if (endingBody) {
+                    endingBody.innerText = `${gameState.endingScenario.body}\n\n(Quyết định bởi Tổng Thống ${gameState.endingScenario.presidentName})`;
+                }
+                
+                const modalGameEnded = document.getElementById("modal-game-ended");
+                if (modalGameEnded) modalGameEnded.classList.remove("hidden");
+                return; // Dừng render phần còn lại của bàn cờ vì game đã kết thúc
+            }
+
+            // Theo dõi đắc cử tổng thống và hiển thị lựa chọn cho đúng người chơi
+            if (gameState.presidentElected && gameState.presidentElected.timestamp > lastHandledPresident) {
+                lastHandledPresident = gameState.presidentElected.timestamp;
+                if (gameState.presidentElected.playerId === playerId) {
+                    const modalPresDecision = document.getElementById("modal-president-decision");
+                    if (modalPresDecision) modalPresDecision.classList.remove("hidden");
+                }
+            }
+
+            const displayRoomCode = document.getElementById("display-room-code");
+            if (displayRoomCode) displayRoomCode.innerText = `ROOM: ${gameState.roomId}`;
+
+            const displayEconomyCycle = document.getElementById("display-economy-cycle");
+            if (displayEconomyCycle) displayEconomyCycle.innerText = gameState.economyPhase || "Hồi Phục";
+            
+            const innerEconomy = document.getElementById("inner-economy");
+            if (innerEconomy) innerEconomy.innerText = gameState.economyPhase || "Hồi Phục";
+
+            const innerTurns = document.getElementById("inner-turns");
+            if (innerTurns) innerTurns.innerText = `${gameState.totalTurnsCount || 0} lượt`;
+
+            // Dices
+            const dice1 = document.getElementById("dice-1");
+            if (dice1) dice1.innerText = gameState.dice ? gameState.dice[0] : 1;
+
+            const dice2 = document.getElementById("dice-2");
+            if (dice2) dice2.innerText = gameState.dice ? gameState.dice[1] : 1;
+
+            // Render presence tokens and buildings indicator for each tile
+            for (let i = 0; i < 40; i++) {
+                const tokensBox = document.getElementById(`tile-tokens-${i}`);
+                if (tokensBox) tokensBox.innerHTML = "";
+
+                const indicatorBox = document.getElementById(`tile-indicator-${i}`);
+                if (indicatorBox) {
+                    indicatorBox.classList.add("hidden");
+                    const prop = (gameState.properties || {})[i];
+                    if (prop) {
+                        indicatorBox.classList.remove("hidden");
+                        const owner = gameState.players ? gameState.players[prop.ownerId] : null;
+                        
+                        const tileOwner = document.getElementById(`tile-owner-${i}`);
+                        if (tileOwner) tileOwner.innerText = owner ? owner.avatar : "🏢";
+                        
+                        const tileStars = document.getElementById(`tile-stars-${i}`);
+                        if (tileStars) {
+                            tileStars.innerHTML = "";
+                            if (prop.isMortgaged) {
+                                tileStars.innerText = " [M]";
+                            } else if (prop.houses > 0) {
+                                tileStars.innerHTML = `<i class="fa-solid fa-star"></i>${prop.houses}`;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Loop players for token positioning
+            Object.values(gameState.players || {}).forEach(p => {
+                if (p.isBankrupt) return;
+                const container = document.getElementById(`tile-tokens-${p.position}`);
+                if (container) {
+                    const span = document.createElement("span");
+                    span.setAttribute("data-player-id", p.id);
+                    span.className = "text-sm bg-black/60 w-4 h-4 rounded-full flex items-center justify-center animate-bounce";
+                    span.innerText = p.avatar;
+                    span.title = p.name;
+                    container.appendChild(span);
+                }
+            });
+
+            // Handle turn control buttons
+            const activePlayer = gameState.players ? gameState.players[gameState.currentTurnPlayerId] : null;
+            const isMyTurn = gameState.currentTurnPlayerId === playerId;
+            const controlsBox = document.getElementById("center-controls");
+            
+            if (controlsBox && activePlayer) {
+                if (isMyTurn) {
+                    const hasRolled = activePlayer.hasRolledThisTurn || false;
+                    const inDebt = activePlayer.inDebt || false;
+
+                    if (inDebt) {
+                        controlsBox.innerHTML = `
+                            <div class="bg-red-950/40 border border-red-600 rounded-lg p-3 w-full text-center space-y-2">
+                                <p class="text-xs text-red-300 font-bold">
+                                    <i class="fa-solid fa-triangle-exclamation"></i> Bạn đang âm ${Math.abs(activePlayer.cash)}đ do các khoản phí bắt buộc!
+                                </p>
+                                <p class="text-[11px] text-gray-400">Hãy bán cổ phiếu hoặc thế chấp đất để bù đắp, hoặc tuyên bố phá sản.</p>
+                                <button onclick="declareBankruptcy()" class="w-full bg-red-700 hover:bg-red-600 text-white font-extrabold py-2.5 rounded-lg text-sm transition-transform active:scale-95 flex items-center justify-center gap-1.5 shadow-lg">
+                                    <i class="fa-solid fa-skull"></i> TUYÊN BỐ PHÁ SẢN
+                                </button>
+                            </div>
+                        `;
+                    } else {
+                        controlsBox.innerHTML = `
+                            <button onclick="handleJackpotClick()" ${hasRolled ? "disabled" : ""} class="w-full font-extrabold py-3 px-6 rounded-lg text-lg tracking-wider flex items-center justify-center gap-2 transition-all shadow-lg ${hasRolled ? 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700' : 'bg-rose-600 hover:bg-rose-500 active:scale-95 text-white animate-pulse'}">
+                                <i class="fa-solid fa-dice"></i> ${hasRolled ? 'ĐÃ QUAY SỐ' : 'JACKPOT (QUAY SỐ)'}
+                            </button>
+                            <button onclick="endTurn()" class="w-full bg-amber-500 hover:bg-amber-400 text-gray-950 font-extrabold py-2 px-6 rounded-lg text-sm tracking-wider flex items-center justify-center gap-2 transition-all mt-2">
+                                <i class="fa-solid fa-check"></i> KẾT THÚC LƯỢT
+                            </button>
+                        `;
+                    }
+                } else {
+                    const inDebt = activePlayer.inDebt || false;
+                    if (inDebt) {
+                        controlsBox.innerHTML = `
+                            <div class="bg-gray-900 border border-red-800/40 rounded-lg p-3 w-full text-center">
+                                <p class="text-xs text-red-400 font-bold">Đang chờ xử lý nợ</p>
+                                <p class="font-bold text-amber-500 mt-1">${activePlayer.name}</p>
+                                <p class="text-[10px] text-gray-500 mt-1">Đang âm ${Math.abs(activePlayer.cash)}đ</p>
+                            </div>
+                        `;
+                    } else {
+                        controlsBox.innerHTML = `
+                            <div class="bg-gray-900 border border-gray-800 rounded-lg p-3 w-full text-center">
+                                <p class="text-xs text-gray-400">Đang đợi lượt đi của</p>
+                                <p class="font-bold text-amber-500">${activePlayer.name}</p>
+                            </div>
+                        `;
+                    }
+                }
+            }
+
+            // Render Leaderboard list
+            const leaderboard = document.getElementById("leaderboard");
+            if (leaderboard) {
+                leaderboard.innerHTML = "";
+                Object.values(gameState.players || {}).forEach(p => {
+                    const el = document.createElement("div");
+                    const isTurn = gameState.currentTurnPlayerId === p.id;
+                    el.className = `flex items-center justify-between p-3 rounded-lg border transition-all ${p.isBankrupt ? "bg-red-950/20 border-red-950/30 opacity-50" : isTurn ? "bg-amber-500/10 border-amber-500 shadow-sm shadow-amber-500/20" : "bg-gray-800/40 border-transparent"}`;
+                    el.innerHTML = `
+                        <div class="flex items-center gap-2">
+                            <span class="text-2xl">${p.avatar}</span>
+                            <div>
+                                <h4 class="text-sm font-bold flex items-center gap-1.5">
+                                    ${p.name}
+                                    ${p.isBankrupt ? `<span class="bg-red-600 text-white text-[9px] px-1.5 py-0.5 rounded">Vỡ nợ</span>` : ""}
+                                    ${p.id === playerId ? `<span class="bg-blue-600 text-white text-[9px] px-1.5 py-0.5 rounded">Bạn</span>` : ""}
+                                </h4>
+                                <p class="text-xs text-gray-400 font-mono">
+                                    Chức vị: ${POLITICAL_RANKS[p.politicalRank || 0].name}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm font-bold text-amber-400 font-mono">${p.cash}đ</p>
+                            <p class="text-[10px] text-gray-400 font-mono">Ròng: ${calculateNetworth(p)}đ</p>
+                        </div>
+                    `;
+                    leaderboard.appendChild(el);
+                });
+            }
+
+            // Incoming trade requests detection
+            const tradeAlert = document.getElementById("trade-alert");
+            if (tradeAlert) {
+                if (gameState.dealProposal && gameState.dealProposal.receiverId === playerId && gameState.dealProposal.status === "PENDING" && gameState.players[gameState.dealProposal.senderId]) {
+                    tradeAlert.classList.remove("hidden");
+                    const senderName = gameState.players[gameState.dealProposal.senderId].name;
+                    
+                    const tradeAlertText = document.getElementById("trade-alert-text");
+                    if (tradeAlertText) tradeAlertText.innerText = `${senderName} vừa đề xuất hợp đồng thương lượng với bạn.`;
+                    
+                    const tradeReceiveCash = document.getElementById("trade-receive-cash");
+                    if (tradeReceiveCash) tradeReceiveCash.innerText = `+$${gameState.dealProposal.offerCash}đ`;
+                    
+                    const tradeReceiveProps = document.getElementById("trade-receive-props");
+                    if (tradeReceiveProps) tradeReceiveProps.innerText = `Đất: ${(gameState.dealProposal.offerProps || []).join(", ") || "Không có"}`;
+                    
+                    const tradeGiveCash = document.getElementById("trade-give-cash");
+                    if (tradeGiveCash) tradeGiveCash.innerText = `-$${gameState.dealProposal.reqCash}đ`;
+                    
+                    const tradeGiveProps = document.getElementById("trade-give-props");
+                    if (tradeGiveProps) tradeGiveProps.innerText = `Đất: ${(gameState.dealProposal.reqProps || []).join(", ") || "Không có"}`;
+                } else {
+                    tradeAlert.classList.add("hidden");
+                }
+            }
+
+            // Sync log history list
+            const historyBox = document.getElementById("history-logs");
+            if (historyBox) {
+                historyBox.innerHTML = "";
+                (gameState.history || []).slice().reverse().forEach(log => {
+                    const el = document.createElement("div");
+                    el.className = "text-gray-400 border-l-2 border-gray-800 pl-2 py-0.5";
+                    el.innerText = log;
+                    historyBox.appendChild(el);
+                });
+            }
+
+            // Keep current open modal content synchronized
+            if (currentActiveModal) {
+                openModal(currentActiveModal, true);
+            }
+        }
+
+        // Write actions logs to database
+        function logHistory(msg) {
+            if (!gameState) return;
+            const updatedLogs = [...(gameState.history || []), `[${new Date().toLocaleTimeString()}] ${msg}`];
+            set(ref(db, `rooms/${roomCode}/history`), updatedLogs);
+        }
+
+        // Clear log history
+        function clearLogs() {
+            set(ref(db, `rooms/${roomCode}/history`), []);
+        }
+
+        // Modal triggers
+        function openModal(name, isSyncUpdate = false) {
+            console.log("[DEBUG] openModal được gọi với name:", name);
+            if (!gameState) return;
+            if (!isSyncUpdate) {
+                closeModal();
+            }
+            currentActiveModal = name;
+            const me = gameState.players ? gameState.players[playerId] : null;
+            if (!me) return;
+
+            if (name === "buy") {
+                const tile = TILES[me.position];
+                const buyTileName = document.getElementById("buy-tile-name");
+                if (buyTileName) buyTileName.innerText = tile.name;
+
+                const buyTileCost = document.getElementById("buy-tile-cost");
+                if (buyTileCost) buyTileCost.innerText = `${tile.cost}đ`;
+
+                const buyTileRent = document.getElementById("buy-tile-rent");
+                if (buyTileRent) buyTileRent.innerText = `${tile.rent}đ`;
+
+                const modalBuy = document.getElementById("modal-buy");
+                if (modalBuy) modalBuy.classList.remove("hidden");
+            } else if (name === "build") {
+                const buildList = document.getElementById("build-list");
+                if (buildList) {
+                    buildList.innerHTML = "";
+                    Object.keys(gameState.properties || {})
+                        .filter(idx => gameState.properties[idx].ownerId === playerId && !gameState.properties[idx].isMortgaged)
+                        .forEach(idx => {
+                            const prop = gameState.properties[idx];
+                            const meta = TILES[idx];
+                            const div = document.createElement("div");
+                            div.className = "flex items-center justify-between bg-gray-950 p-3 rounded text-xs border border-gray-800";
+                            div.innerHTML = `
+                                <div>
+                                    <h5 class="font-bold text-gray-200">${meta.name}</h5>
+                                    <p class="text-gray-400 font-mono">Xây dựng: ${prop.houses || 0}/5 sao</p>
+                                </div>
+                                <button onclick="buildHouse(${idx})" ${prop.houses >= 5 ? "disabled" : ""} class="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold px-3 py-1.5 rounded">
+                                    Nâng cấp (+500đ)
+                                </button>
+                            `;
+                            buildList.appendChild(div);
+                        });
+                    if (buildList.children.length === 0) {
+                        buildList.innerHTML = `<p class="text-xs text-gray-500 text-center py-4">Bạn không có bất động sản nào đủ điều kiện nâng cấp.</p>`;
+                    }
+                }
+                const modalBuild = document.getElementById("modal-build");
+                if (modalBuild) modalBuild.classList.remove("hidden");
+            } else if (name === "bank") {
+                const btnInsu = document.getElementById("btn-insurance");
+                if (btnInsu) {
+                    if (me.insurance && me.insurance.active) {
+                        btnInsu.className = "p-4 rounded-lg border text-left space-y-1 bg-emerald-950/20 border-emerald-500";
+                    } else {
+                        btnInsu.className = "bg-gray-800 hover:bg-gray-775 p-4 rounded-lg border border-gray-700 text-left space-y-1";
+                    }
+                }
+
+                // Render land mortgage lists with remaining turns
+                const mortgageList = document.getElementById("mortgage-list");
+                if (mortgageList) {
+                    mortgageList.innerHTML = "";
+                    Object.keys(gameState.properties || {})
+                        .filter(idx => gameState.properties[idx].ownerId === playerId)
+                        .forEach(idx => {
+                            const prop = gameState.properties[idx];
+                            const meta = TILES[idx];
+                            const div = document.createElement("div");
+                            div.className = "flex items-center justify-between bg-gray-950 p-2 rounded text-xs";
+                            div.innerHTML = `
+                                <span>${meta.name}</span>
+                                <div class="flex gap-2">
+                                    ${!prop.isMortgaged ? 
+                                        `<button onclick="handleMortgage(${idx})" class="bg-amber-600 hover:bg-amber-500 text-white font-bold px-2 py-1 rounded text-[10px]">Thế Chấp (+${Math.round(meta.cost * 0.5)}đ)</button>` : 
+                                        `<div class="flex items-center gap-2">
+                                            <span class="text-red-400 text-[10px] font-bold">Còn ${prop.mortgageTurnsLeft || 0} lượt</span>
+                                            <button onclick="handleRedeem(${idx})" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-2 py-1 rounded text-[10px]">Giải chấp (-${Math.round(meta.cost * 0.55)}đ)</button>
+                                        </div>`
+                                    }
+                                </div>
+                            `;
+                            mortgageList.appendChild(div);
+                        });
+                    if (mortgageList.children.length === 0) {
+                        mortgageList.innerHTML = `<p class="text-xs text-gray-500 text-center py-2">Bạn không sở hữu bất động sản nào.</p>`;
+                    }
+                }
+
+                // Render Stock mortgage list
+                const stockMortgageList = document.getElementById("stock-mortgage-list");
+                if (stockMortgageList) {
+                    stockMortgageList.innerHTML = "";
+                    if (!me.pledgedStocks) {
+                        me.pledgedStocks = {
+                            TECH: { qty: 0, loanAmount: 0, turnsLeft: 0 },
+                            RESORT: { qty: 0, loanAmount: 0, turnsLeft: 0 },
+                            STAPLE: { qty: 0, loanAmount: 0, turnsLeft: 0 }
+                        };
+                    }
+                    ["TECH", "RESORT", "STAPLE"].forEach(sym => {
+                        const pledged = me.pledgedStocks[sym] || { qty: 0, loanAmount: 0, turnsLeft: 0 };
+                        const owned = me.stocks ? (me.stocks[sym] || 0) : 0;
+                        const available = owned - pledged.qty;
+                        const currentPrice = gameState.stocks && gameState.stocks[sym] ? gameState.stocks[sym].price : 100;
+
+                        const div = document.createElement("div");
+                        div.className = "bg-gray-950 p-2.5 rounded text-xs space-y-2 border border-gray-800";
+                        
+                        let pledgeActionHTML = "";
+                        if (available > 0) {
+                            pledgeActionHTML = `
+                                <div class="flex items-center gap-1.5 mt-1">
+                                    <input id="pledge-qty-${sym}" type="number" min="1" max="${available}" value="1" class="w-16 bg-gray-800 border border-gray-700 text-white rounded text-center py-1 font-mono text-[11px]"/>
+                                    <button onclick="pledgeStock('${sym}', parseInt(document.getElementById('pledge-qty-${sym}').value) || 0)" class="bg-amber-600 hover:bg-amber-500 text-white font-bold px-2 py-1 rounded text-[10px]">
+                                        Thế Chấp (+${Math.round(currentPrice * 0.5)}đ/CP)
+                                    </button>
+                                </div>
+                            `;
+                        } else {
+                            pledgeActionHTML = `<p class="text-[10px] text-gray-500 italic mt-1">Không còn cổ phiếu khả dụng để thế chấp.</p>`;
+                        }
+
+                        let redeemActionHTML = "";
+                        if (pledged.qty > 0) {
+                            const redeemCost = Math.round(pledged.loanAmount * 1.3);
+                            redeemActionHTML = `
+                                <div class="flex items-center justify-between border-t border-gray-800 pt-1.5 mt-1 text-[10px]">
+                                    <span class="text-rose-400 font-bold">Đang thế chấp: ${pledged.qty} CP (Còn ${pledged.turnsLeft || 0} lượt)</span>
+                                    <button onclick="redeemStock('${sym}')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-2 py-1 rounded text-[10px]">
+                                        Giải Chấp (-${redeemCost}đ)
+                                    </button>
+                                </div>
+                            `;
+                        }
+
+                        div.innerHTML = `
+                            <div class="flex justify-between items-center">
+                                <span class="font-bold text-gray-300">${sym} (Giá: ${currentPrice}đ)</span>
+                                <span class="text-gray-400 text-[10px]">Sở hữu: ${owned} CP (Khả dụng: ${available})</span>
+                            </div>
+                            ${pledgeActionHTML}
+                            ${redeemActionHTML}
+                        `;
+                        stockMortgageList.appendChild(div);
+                    });
+                }
+
+                // Render Loan Shark status box in Bank modal
+                const loanSharkBox = document.getElementById("loanshark-status-box");
+                if (loanSharkBox) {
+                    if (me.loans && me.loans.loanShark > 0) {
+                        loanSharkBox.classList.remove("hidden");
+                        const debtEl = document.getElementById("loanshark-debt-amount");
+                        if (debtEl) debtEl.innerText = `${me.loans.loanShark}đ`;
+                        const turnsLeftEl = document.getElementById("loanshark-turns-left");
+                        if (turnsLeftEl) turnsLeftEl.innerText = `${4 - (me.loans.loanSharkTurns || 0)} vòng`;
+                    } else {
+                        loanSharkBox.classList.add("hidden");
+                    }
+                }
+
+                const modalBank = document.getElementById("modal-bank");
+                if (modalBank) modalBank.classList.remove("hidden");
+            } else if (name === "deal") {
+                if (!isSyncUpdate) {
+                    const select = document.getElementById("select-partner");
+                    if (select) {
+                        select.innerHTML = `<option value="">-- Click chọn đối tác --</option>`;
+                        Object.values(gameState.players || {})
+                            .filter(p => p.id !== playerId && !p.isBankrupt)
+                            .forEach(p => {
+                                select.innerHTML += `<option value="${p.id}">${p.avatar} ${p.name}</option>`;
+                            });
+                    }
+                    
+                    const myProps = document.getElementById("trade-my-props");
+                    if (myProps) {
+                        myProps.innerHTML = "";
+                        Object.keys(gameState.properties || {})
+                            .filter(idx => gameState.properties[idx].ownerId === playerId)
+                            .forEach(idx => {
+                                myProps.innerHTML += `
+                                    <label class="flex items-center gap-2">
+                                        <input type="checkbox" value="${idx}" class="offer-prop-check"/>
+                                        <span>${TILES[idx].name}</span>
+                                    </label>
+                                `;
+                            });
+                    }
+                }
+                const modalDeal = document.getElementById("modal-deal");
+                if (modalDeal) modalDeal.classList.remove("hidden");
+            } else if (name === "stocks") {
+                const stockCycleEl = document.getElementById("stock-economy-cycle");
+                if (stockCycleEl) stockCycleEl.innerText = gameState.economyPhase || "Hồi Phục";
+
+                const stocksList = document.getElementById("stocks-list");
+                if (stocksList && gameState.stocks) {
+                    stocksList.innerHTML = "";
+                    Object.keys(gameState.stocks).forEach(sym => {
+                        const stock = gameState.stocks[sym];
+                        const myQty = me.stocks ? (me.stocks[sym] || 0) : 0;
+                        const trend = stock.trend || [stock.price];
+                        const prevPrice = trend[trend.length - 2] || stock.price;
+                        const diff = stock.price - prevPrice;
+                        const diffSign = diff >= 0 ? "+" : "";
+                        const diffClass = diff >= 0 ? "text-emerald-400" : "text-rose-500";
+                        const diffIcon = diff >= 0 ? "▲" : "▼";
+
+                        const avgBuy = me.avgBuyPrices ? (me.avgBuyPrices[sym] || 0) : 0;
+                        let profitHTML = `<span class="text-gray-500">—</span>`;
+                        
+                        if (myQty > 0 && avgBuy > 0) {
+                            const profit = (stock.price - avgBuy) * myQty;
+                            const roi = ((stock.price - avgBuy) / avgBuy) * 100;
+                            if (profit > 0) {
+                                profitHTML = `<span class="text-emerald-400 font-bold font-mono">+${Math.round(profit)}đ (+${roi.toFixed(1)}%)</span>`;
+                            } else if (profit < 0) {
+                                profitHTML = `<span class="text-rose-500 font-bold font-mono">${Math.round(profit)}đ (${roi.toFixed(1)}%)</span>`;
+                            } else {
+                                profitHTML = `<span class="text-gray-400 font-mono">0đ (0.0%)</span>`;
+                            }
+                        }
+
+                        const div = document.createElement("div");
+                        div.className = "bg-gray-950 p-4 rounded-lg border border-gray-800 flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs";
+                        div.innerHTML = `
+                            <div class="space-y-1">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm font-black text-white">${sym}</span>
+                                    <span class="text-[10px] text-gray-400">
+                                        ${sym === "TECH" ? "Mã Công Nghệ" : sym === "RESORT" ? "BĐS Du Lịch" : "Thực Phẩm Lương Thực"}
+                                    </span>
+                                </div>
+                                <div class="flex items-center gap-2 font-mono">
+                                    <span class="text-sm font-bold text-amber-500">${stock.price}đ</span>
+                                    <span class="${diffClass}">
+                                        ${diffIcon} ${diffSign}${diff}đ
+                                    </span>
+                                </div>
+                                <p class="text-[10px] text-gray-500">Đang sở hữu: <strong class="text-sky-400 font-mono">${myQty} CP</strong> (Trị giá: ${myQty * stock.price}đ)</p>
+                                <p class="text-[10px] text-gray-500">Lãi/Lỗ: ${profitHTML}</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <input id="stock-amount-${sym}" type="number" value="1" min="1" class="w-12 bg-gray-900 border border-gray-700 text-white rounded text-center py-1 font-mono text-xs"/>
+                                <button onclick="tradeStock('${sym}', 'BUY')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-1 px-3 rounded text-xs">MUA</button>
+                                <button onclick="tradeStock('${sym}', 'SELL')" class="bg-rose-600 hover:bg-rose-500 text-white font-bold py-1 px-3 rounded text-xs">BÁN</button>
+                            </div>
+                        `;
+                        stocksList.appendChild(div);
+                    });
+                }
+                const modalStocks = document.getElementById("modal-stocks");
+                if (modalStocks) modalStocks.classList.remove("hidden");
+            } else if (name === "commodities") {
+                const commoditiesList = document.getElementById("commodities-list");
+                if (commoditiesList && gameState.commodities) {
+                    commoditiesList.innerHTML = "";
+                    Object.keys(gameState.commodities).forEach(type => {
+                        const commodity = gameState.commodities[type];
+                        const label = COMMODITY_LABELS[type];
+                        const myQty = me.commodityInventory ? (me.commodityInventory[type] || 0) : 0;
+                        const trend = commodity.trend || [commodity.price];
+                        const prevPrice = trend[trend.length - 2] || commodity.price;
+                        const diff = commodity.price - prevPrice;
+                        const diffClass = diff >= 0 ? "text-emerald-400" : "text-rose-500";
+                        const diffIcon = diff >= 0 ? "▲" : "▼";
+
+                        const div = document.createElement("div");
+                        div.className = "bg-gray-950 p-4 rounded-lg border border-gray-850 flex items-center justify-between gap-4 text-xs";
+                        div.innerHTML = `
+                            <div class="space-y-1">
+                                <span class="text-sm font-black text-white">${label.name}</span>
+                                <div class="flex items-center gap-2 font-mono">
+                                    <span class="text-sm font-bold text-amber-500">${commodity.price}đ/${label.unit}</span>
+                                    <span class="${diffClass}">${diffIcon} ${diff >= 0 ? "+" : ""}${diff}đ</span>
+                                </div>
+                                <p class="text-[10px] text-gray-500">Đang có: <strong class="text-sky-400 font-mono">${myQty} ${label.unit}</strong> (Trị giá: ${myQty * commodity.price}đ)</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <input id="commodity-amount-${type}" type="number" value="1" min="1" max="${myQty}" class="w-14 bg-gray-900 border border-gray-700 text-white rounded text-center py-1 font-mono text-xs"/>
+                                <button onclick="sellCommodity('${type}')" ${myQty <= 0 ? "disabled" : ""} class="bg-rose-600 hover:bg-rose-500 disabled:opacity-40 text-white font-bold py-1 px-3 rounded text-xs">BÁN</button>
+                            </div>
+                        `;
+                        commoditiesList.appendChild(div);
+                    });
+                }
+                const modalCommodities = document.getElementById("modal-commodities");
+                if (modalCommodities) modalCommodities.classList.remove("hidden");
+            } else if (name === "assets") {
+                const assetCash = document.getElementById("asset-cash");
+                if (assetCash) assetCash.innerText = `$${me.cash}đ`;
+
+                const assetNetworth = document.getElementById("asset-networth");
+                if (assetNetworth) assetNetworth.innerText = `$${calculateNetworth(me)}đ`;
+
+                const assetCareer = document.getElementById("asset-career");
+                if (assetCareer) assetCareer.innerText = me.career ? `${me.career.level} (Lương: $${me.career.salary}đ)` : "---";
+
+                const assetLoanBank = document.getElementById("asset-loan-bank");
+                if (assetLoanBank) assetLoanBank.innerText = me.loans ? `$${me.loans.bank || 0}đ` : "$0đ";
+
+                const assetLoanShark = document.getElementById("asset-loan-shark");
+                if (assetLoanShark) assetLoanShark.innerText = me.loans ? `$${me.loans.loanShark || 0}đ` : "$0đ";
+
+                const assetInsurance = document.getElementById("asset-insurance");
+                if (assetInsurance) assetInsurance.innerText = (me.insurance && me.insurance.active) ? "Đang hoạt động" : "Không đăng ký";
+
+                const assetSavings = document.getElementById("asset-savings");
+                if (assetSavings) assetSavings.innerText = (me.savings && me.savings.amount > 0) ? `${me.savings.amount}đ (Còn ${me.savings.dueInTurns} vòng)` : "Không gửi";
+
+                const modalAssets = document.getElementById("modal-assets");
+                if (modalAssets) modalAssets.classList.remove("hidden");
+            } else if (name === "casino") {
+                const casinoBet = document.getElementById("input-casino-bet");
+                if (casinoBet) casinoBet.value = "";
+
+                const casinoRes = document.getElementById("casino-result");
+                if (casinoRes) casinoRes.classList.add("hidden");
+
+                const playBtn = document.querySelector('#modal-casino button[onclick="playCasino()"]');
+                if (playBtn) {
+                    if (me.hasPlayedCasinoThisTurn) {
+                        playBtn.disabled = true;
+                        playBtn.innerText = "Đã Chơi Trong Lượt Này";
+                        playBtn.classList.add("opacity-50", "cursor-not-allowed");
+                    } else {
+                        playBtn.disabled = false;
+                        playBtn.innerText = "Bắt Đầu Lắc Xúc Xắc";
+                        playBtn.classList.remove("opacity-50", "cursor-not-allowed");
+                    }
+                }
+
+                const modalCasino = document.getElementById("modal-casino");
+                if (modalCasino) modalCasino.classList.remove("hidden");
+            } else if (name === "school") {
+                const modalSchool = document.getElementById("modal-school");
+                if (modalSchool) modalSchool.classList.remove("hidden");
+            } else if (name === "political") {
+                const rankInfo = POLITICAL_RANKS[me.politicalRank || 0];
+                const displayRank = document.querySelector("#political-current-rank p:last-child");
+                if (displayRank) displayRank.innerText = rankInfo.name;
+
+                const actionBox = document.getElementById("political-action-box");
+                if (actionBox) {
+                    if (me.politicalRank === 0) {
+                        actionBox.innerHTML = `<button onclick="donateToPoliticalFund()" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-2.5 rounded-lg text-sm">Quyên Góp 1000đ Vào Quỹ Chính Trị</button>`;
+                    } else if (me.politicalRank === 1) {
+                        actionBox.innerHTML = `<button onclick="donateLandForPolitics(1, 2, 'Nghị Sĩ Địa Phương')" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-2.5 rounded-lg text-sm">Hiến Tặng 1 Mảnh Đất</button>`;
+                    } else if (me.politicalRank === 2) {
+                        actionBox.innerHTML = `<button onclick="donateLandForPolitics(3, 3, 'Thị Trưởng')" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-2.5 rounded-lg text-sm">Hiến Tặng 3 Mảnh Đất</button>`;
+                    } else if (me.politicalRank === 3) {
+                        actionBox.innerHTML = `<button onclick="bribeForPresidentialCandidacy()" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-2.5 rounded-lg text-sm">Hối Lộ 50000đ — Trở Thành Ứng Viên Tổng Thống</button>`;
+                    } else if (me.politicalRank === 4) {
+                        actionBox.innerHTML = `<p class="text-center text-amber-400 text-sm font-semibold py-4">Bạn đang chờ kỳ bầu cử tiếp theo. Hãy sống sót!</p>`;
+                    }
+                }
+                const modalPolitical = document.getElementById("modal-political");
+                if (modalPolitical) modalPolitical.classList.remove("hidden");
+            } else if (name === "railroadNetwork") {
+                const currentPos = me.position;
+                const listBox = document.getElementById("railroad-network-list");
+                if (listBox) {
+                    listBox.innerHTML = "";
+                    RAILROAD_TILES.forEach(idx => {
+                        if (idx === currentPos) return;
+                        const prop = gameState.properties[idx];
+                        if (prop && prop.ownerId === playerId && !prop.isMortgaged) {
+                            const btn = document.createElement("button");
+                            btn.onclick = () => teleportToRailroad(idx);
+                            btn.className = "w-full bg-sky-700 hover:bg-sky-600 text-white font-bold py-2.5 rounded-lg text-sm text-left px-4 flex items-center gap-2";
+                            btn.innerHTML = `<i class="fa-solid fa-train"></i> ${TILES[idx].name}`;
+                            listBox.appendChild(btn);
+                        }
+                    });
+                }
+
+                const modalRailroad = document.getElementById("modal-railroad-network");
+                if (modalRailroad) modalRailroad.classList.remove("hidden");
+            }
+        }
+
+        function closeModal() {
+            currentActiveModal = "";
+            document.querySelectorAll("[id^='modal-']").forEach(modal => {
+                modal.classList.add("hidden");
+            });
+        }
+
+        // Render dynamic selection of trading partner's assets list
+        function updateDealPropsUI() {
+            const partnerId = document.getElementById("select-partner").value;
+            const container = document.getElementById("trade-partner-props");
+            if (!container) return;
+            container.innerHTML = "";
+
+            if (!partnerId) {
+                container.innerHTML = "Vui lòng chọn đối tác đàm phán trước";
+                container.className = "bg-gray-950 p-2 rounded-lg max-h-[100px] overflow-y-auto space-y-1 text-gray-500 italic";
+                return;
+            }
+
+            container.className = "bg-gray-950 p-2 rounded-lg max-h-[100px] overflow-y-auto space-y-1";
+            Object.keys(gameState.properties || {})
+                .filter(idx => gameState.properties[idx].ownerId === partnerId)
+                .forEach(idx => {
+                    container.innerHTML += `
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" value="${idx}" class="req-prop-check"/>
+                            <span>${TILES[idx].name}</span>
+                        </label>
+                    `;
+                });
+            if (container.children.length === 0) {
+                container.innerHTML = `<span class="text-gray-500 italic">Không có bất động sản.</span>`;
+            }
+        }
+
+        // Helper functions to animate player movement locally
+        function removeLocalToken(pId, pos) {
+            const container = document.getElementById(`tile-tokens-${pos}`);
+            if (container) {
+                const token = container.querySelector(`[data-player-id="${pId}"]`);
+                if (token) token.remove();
+            }
+        }
+
+        // Detailed tile info popup
+        function showTileInfo(tileIndex) {
+            const tile = TILES[tileIndex];
+            if (!tile || !["property", "railroad", "utility"].includes(tile.type)) return;
+
+            const prop = (gameState.properties || {})[tileIndex];
+            const owner = prop ? gameState.players[prop.ownerId] : null;
+
+            const nameEl = document.getElementById("tile-info-name");
+            if (nameEl) nameEl.innerText = tile.name;
+
+            const costEl = document.getElementById("tile-info-cost");
+            if (costEl) costEl.innerText = `${tile.cost}đ`;
+
+            const rentEl = document.getElementById("tile-info-rent-base");
+            if (rentEl) rentEl.innerText = `${tile.rent}đ`;
+
+            const ownerBox = document.getElementById("tile-info-owner-box");
+            if (ownerBox) {
+                if (owner) {
+                    ownerBox.classList.remove("hidden");
+                    const ownerNameEl = document.getElementById("tile-info-owner-name");
+                    if (ownerNameEl) ownerNameEl.innerText = `${owner.avatar} ${owner.name}`;
+                    const housesEl = document.getElementById("tile-info-houses");
+                    if (housesEl) housesEl.innerText = `${prop.houses || 0}/5`;
+                    const mortgagedEl = document.getElementById("tile-info-mortgaged");
+                    if (mortgagedEl) mortgagedEl.innerText = prop.isMortgaged ? "Đang thế chấp" : "Bình thường";
+                } else {
+                    ownerBox.classList.add("hidden");
+                }
+            }
+
+            const rentTable = document.getElementById("tile-info-rent-table");
+            if (rentTable) {
+                const multipliers = [1, 2, 4, 6, 8, 12];
+                rentTable.innerHTML = multipliers.map((m, i) => `
+                    <div class="flex justify-between text-xs py-1 border-b border-gray-800">
+                        <span>${i === 0 ? "Đất trống (0 nhà)" : i + " nhà" + (i === 5 ? " (tối đa)" : "")}</span>
+                        <span class="font-mono font-bold text-amber-400">${tile.rent * m}đ</span>
+                    </div>
+                `).join("");
+
+                if (tile.type === "railroad") {
+                    const noteDiv = document.createElement("div");
+                    noteDiv.className = "text-[10px] text-sky-400 mt-2 bg-sky-950/30 p-2 rounded border border-sky-800/40 leading-relaxed";
+                    noteDiv.innerHTML = `<i class="fa-solid fa-circle-info"></i> <strong>Mạng Lưới Ga Tàu:</strong> Sở hữu từ 2 ga tàu trở lên cho phép bạn dịch chuyển miễn phí giữa các ga khi dừng chân tại ga của mình.`;
+                    rentTable.appendChild(noteDiv);
+                }
+            }
+
+            // Gắn nút Khai thác tài nguyên
+            const extractBox = document.getElementById("tile-info-extract-action");
+            if (extractBox) {
+                const resourceType = RESOURCE_TILES[tileIndex];
+                if (resourceType && prop && prop.ownerId === playerId) {
+                    const label = COMMODITY_LABELS[resourceType];
+                    const isMyTurn = gameState.currentTurnPlayerId === playerId;
+                    const alreadyExtracted = prop.hasExtractedThisTurn || false;
+
+                    extractBox.classList.remove("hidden");
+                    extractBox.innerHTML = `
+                        <button onclick="extractResource(${tileIndex})" 
+                            ${(!isMyTurn || alreadyExtracted) ? "disabled" : ""}
+                            class="w-full font-bold py-2.5 rounded-lg text-sm transition-colors ${(!isMyTurn || alreadyExtracted) ? 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}">
+                            ⛏️ Khai Thác ${label.name} (Chi phí: 1000đ, nhận 1-3 ${label.unit})
+                            ${alreadyExtracted ? ' — Đã khai thác lượt này' : ''}
+                        </button>
+                    `;
+                } else {
+                    extractBox.classList.add("hidden");
+                }
+            }
+
+            const buyBtnBox = document.getElementById("tile-info-buy-action");
+            if (buyBtnBox && gameState.players) {
+                const me = gameState.players[playerId];
+                if (me && !prop && me.position === tileIndex && gameState.currentTurnPlayerId === playerId) {
+                    buyBtnBox.classList.remove("hidden");
+                } else {
+                    buyBtnBox.classList.add("hidden");
+                }
+            }
+
+            const modalTileInfo = document.getElementById("modal-tile-info");
+            if (modalTileInfo) modalTileInfo.classList.remove("hidden");
+        }
+
+        // Explanation popup for special functional tiles
+        function showTileExplain(tileIndex) {
+            const tile = TILES[tileIndex];
+            if (!tile) return;
+            let key = tile.type;
+            if (tile.index === 30) key = "goToJail";
+            if (tile.index === 10) key = "jail";
+            if (tile.index === 0) key = "start";
+            if (tile.index === 20) key = "freeParking";
+
+            const nameEl = document.getElementById("tile-explain-name");
+            if (nameEl) nameEl.innerText = tile.name;
+
+            const textEl = document.getElementById("tile-explain-text");
+            if (textEl) textEl.innerText = TILE_EXPLANATIONS[key] || "Không có mô tả chi tiết cho ô này.";
+
+            const modalExplain = document.getElementById("modal-tile-explain");
+            if (modalExplain) modalExplain.classList.remove("hidden");
+        }
+
+        // Beautiful Event popup on landing
+        function showEventPopup(title, text) {
+            const titleEl = document.getElementById("event-popup-title");
+            if (titleEl) titleEl.innerText = title;
+
+            const textEl = document.getElementById("event-popup-text");
+            if (textEl) textEl.innerText = text;
+
+            const popup = document.getElementById("modal-event-popup");
+            if (popup) popup.classList.remove("hidden");
+        }
+
+        function closeEventPopup() {
+            const popup = document.getElementById("modal-event-popup");
+            if (popup) popup.classList.add("hidden");
+        }
+
+        function addLocalToken(pId, avatar, name, pos) {
+            const container = document.getElementById(`tile-tokens-${pos}`);
+            if (container) {
+                if (!container.querySelector(`[data-player-id="${pId}"]`)) {
+                    const span = document.createElement("span");
+                    span.setAttribute("data-player-id", pId);
+                    span.className = "text-sm bg-black/60 w-4 h-4 rounded-full flex items-center justify-center animate-bounce";
+                    span.innerText = avatar;
+                    span.title = name;
+                    container.appendChild(span);
+                }
+            }
+        }
+
+        // Execution logic after player completes physical movement (Đồng bộ totalTurnsCount)
+        function executeLandingLogic(player, d1, d2, isDouble, finalPos, isJailed, turnsLeft, logMsg) {
+            const originalPosition = player.position;
+
+            if (!isJailed && finalPos < originalPosition && originalPosition !== 0) {
+                const salary = player.career.salary || 200;
+                player.cash += salary;
+                logMsg += ` Nhận thù lao công việc +${salary}đ khi vượt qua cổng START.`;
+            }
+
+            player.position = finalPos;
+            player.inJail = isJailed;
+            player.jailTurnsLeft = turnsLeft;
+
+            if (isDouble && !isJailed) {
+                player.hasRolledThisTurn = false;
+                logMsg += ` [ĐẶC BIỆT] Bạn đổ được xúc xắc đôi! Được thêm 1 lượt quay nữa.`;
+            } else {
+                player.hasRolledThisTurn = true;
+            }
+
+            const tile = TILES[finalPos];
+            let modalToOpen = "";
+
+            if (tile.type === "property" || tile.type === "railroad" || tile.type === "utility") {
+                const prop = (gameState.properties || {})[finalPos];
+                if (!prop) {
+                    modalToOpen = "buy";
+                } else if (prop.ownerId !== playerId && !prop.isMortgaged) {
+                    const rentCost = calculateRent(finalPos);
+                    player.cash -= rentCost;
+                    const owner = gameState.players[prop.ownerId];
+                    if (owner) {
+                        owner.cash += rentCost;
+                        const ownerUpdates = {};
+                        ownerUpdates[`players/${prop.ownerId}/cash`] = owner.cash;
+                        update(ref(db, `rooms/${roomCode}`), ownerUpdates);
+                        
+                        if (playerId === player.id) {
+                            showEventPopup("TRẢ TIỀN THUÊ", `Bạn đã trả ${rentCost}đ tiền thuê đất cho ${owner.name}.`);
+                        }
+                    }
+                    logMsg += ` Đỗ tại ô của ${owner ? owner.name : "đối thủ"}, trả phí thuê đất ${rentCost}đ.`;
+                } else if (prop.ownerId !== playerId && prop.isMortgaged) {
+                    const owner = gameState.players[prop.ownerId];
+                    if (owner && playerId === player.id) {
+                        showEventPopup("ĐẤT THẾ CHẤP", `Đây là đất đang thế chấp của ${owner.name}, bạn không phải trả tiền thuê.`);
+                    }
+                    logMsg += ` Đỗ tại ô đất đang thế chấp của ${owner ? owner.name : "đối thủ"}, miễn tiền thuê.`;
+                } else if (prop.ownerId === playerId && tile.type === "railroad") {
+                    const otherOwnedRailroads = RAILROAD_TILES.filter(idx => 
+                        idx !== finalPos && 
+                        gameState.properties &&
+                        gameState.properties[idx] && 
+                        gameState.properties[idx].ownerId === playerId &&
+                        !gameState.properties[idx].isMortgaged
+                    );
+
+                    if (otherOwnedRailroads.length > 0 && playerId === player.id) {
+                        modalToOpen = "railroadNetwork";
+                    }
+                }
+            } else if (tile.type === "tax") {
+                player.cash -= tile.cost;
+                if (playerId === player.id) {
+                    showEventPopup("THUẾ THU NHẬP", `Bạn đã đóng ${tile.cost}đ tiền thuế.`);
+                }
+                logMsg += ` Đóng nộp thuế kho bạc nhà nước ${tile.cost}đ.`;
+            } else if (tile.index === 30) {
+                player.position = 10;
+                player.inJail = true;
+                player.jailTurnsLeft = 3;
+                player.hasRolledThisTurn = true;
+                if (playerId === player.id) {
+                    showEventPopup("VÀO TÙ", "Bạn bị bắt giữ và chuyển thẳng vào Nhà Tù! Chờ đủ số lượt hoặc đóng phạt / đổ được xúc xắc đôi để được ra ngoài.");
+                }
+                logMsg += ` Bị trích lệnh bắt giữ chuyển thẳng vào khu vực NHÀ TÙ!`;
+            } else if (tile.type === "casino") {
+                modalToOpen = "casino";
+            } else if (tile.type === "school") {
+                modalToOpen = "school";
+            } else if (tile.type === "chance") {
+                const r = Math.random();
+                let eventText = "";
+                let eventTitle = "CƠ HỘI";
+
+                if (r < 0.15) {
+                    const injury = INJURY_CARDS[Math.floor(Math.random() * INJURY_CARDS.length)];
+                    let fee = INJURY_FEE_BY_SEVERITY[injury.severity];
+                    let insuBonusMsg = "";
+
+                    if (player.insurance && player.insurance.active) {
+                        fee = Math.round(fee * 0.6);
+                        insuBonusMsg = " (Đã áp dụng giảm trừ bảo hiểm y tế 40%.)";
+                    }
+
+                    player.position = HOSPITAL_TILE_INDEX;
+                    player.cash -= fee;
+
+                    const severityLabel = injury.severity === 1 ? "Nhẹ" : injury.severity === 2 ? "Trung Bình" : "Nghiêm Trọng";
+                    logMsg += ` [TAI NẠN] Rút phải thẻ "${injury.name}" (Mức độ: ${severityLabel})! Được đưa thẳng vào Bệnh Viện, thanh toán viện phí ${fee}đ.${insuBonusMsg}`;
+
+                    if (playerId === player.id) {
+                        showEventPopup("SỰ CỐ Y TẾ", `Bạn gặp tai nạn: "${injury.name}".\nMức độ thương tật: ${severityLabel}.\nBạn đã được đưa vào Bệnh Viện điều trị và thanh toán viện phí ${fee}đ.${insuBonusMsg} Không có ảnh hưởng nào khác, bạn có thể tiếp tục chơi bình thường ở lượt sau.`);
+                    }
+                } else if (r < 0.45) {
+                    player.cash += 500;
+                    eventText = 'Ủy ban khen thưởng đột xuất, bạn nhận được +500đ!';
+                    logMsg += ` Rút được thẻ chúc mừng: "${eventText}".`;
+                    if (playerId === player.id) {
+                        showEventPopup(eventTitle, eventText);
+                    }
+                } else if (r < 0.75) {
+                    player.cash -= 400;
+                    eventText = 'Chi phí xử phạt vi phạm giao thông, bạn bị trừ -400đ!';
+                    logMsg += ` Rút được thẻ tổn thất: "${eventText}".`;
+                    if (playerId === player.id) {
+                        showEventPopup(eventTitle, eventText);
+                    }
+                } else {
+                    eventText = 'Không xảy ra biến động kinh tế nào với tài sản của bạn.';
+                    logMsg += ` Rút được thẻ cơ hội: "${eventText}".`;
+                    if (playerId === player.id) {
+                        showEventPopup(eventTitle, eventText);
+                    }
+                }
+            } else if (tile.type === "community") {
+                const news = COMMUNITY_NEWS[Math.floor(Math.random() * COMMUNITY_NEWS.length)];
+                logMsg += ` Đọc được bản tin từ Hòm Thư Chung: "${news}"`;
+
+                if (playerId === player.id) {
+                    showEventPopup("BẢN TIN HÒM THƯ CHUNG", news);
+                }
+            }
+
+            player.netWorth = calculateNetworth(player);
+
+            const updates = {};
+            updates[`players/${playerId}`] = player;
+            updates["dice"] = [d1, d2];
+            
+            const nextTotalTurns = (gameState.totalTurnsCount || 0) + 1;
+            updates["totalTurnsCount"] = nextTotalTurns;
+
+            update(ref(db, `rooms/${roomCode}`), updates);
+            logHistory(logMsg);
+
+            if (modalToOpen) {
+                openModal(modalToOpen);
+            }
+        }
+
+        // Roll Dice & Animation Core
+        function rollDice() {
+            handleJackpotClick();
+        }
+
+        function handleJackpotClick() {
+            if (!gameState || !gameState.players) return;
+            if (gameState.currentTurnPlayerId !== playerId) return;
+            const player = gameState.players[playerId];
+            if (!player) return;
+            const hasRolled = player.hasRolledThisTurn || false;
+
+            if (hasRolled) {
+                alert("Bạn đã tung xúc xắc trong lượt này rồi!");
+                return;
+            }
+
+            let isJailed = player.inJail;
+            let turnsLeft = player.jailTurnsLeft;
+
+            const jackpotBtn = document.querySelector("button[onclick='handleJackpotClick()']");
+            if (jackpotBtn) {
+                jackpotBtn.disabled = true;
+                jackpotBtn.classList.add("opacity-50", "cursor-not-allowed");
+            }
+
+            const d1 = Math.floor(Math.random() * 6) + 1;
+            const d2 = Math.floor(Math.random() * 6) + 1;
+            const steps = d1 + d2;
+            const isDouble = (d1 === d2);
+
+            let logMsg = "";
+            let finalPos = player.position;
+
+            if (isJailed) {
+                if (d1 === d2) {
+                    isJailed = false;
+                    turnsLeft = 0;
+                    logMsg = `${player.name} gieo xúc xắc kép [${d1}, ${d2}] thành công ra tù!`;
+                    finalPos = (player.position + steps) % 40;
+                } else {
+                    turnsLeft -= 1;
+                    if (turnsLeft <= 0) {
+                        isJailed = false;
+                        player.cash -= 500;
+                        logMsg = `${player.name} hết hạn cải tạo tù, đóng phạt 500đ để ra tù.`;
+                        finalPos = (player.position + steps) % 40;
+                    } else {
+                        logMsg = `${player.name} gieo được [${d1}, ${d2}], tiếp tục thi hành án nhà tù (${turnsLeft} lượt nữa).`;
+                        finalPos = player.position;
+                    }
+                }
+            } else {
+                finalPos = (player.position + steps) % 40;
+                logMsg = `${player.name} gieo được xúc xắc [${d1}, ${d2}], bước đi ${steps} ô.`;
+            }
+
+            // Slot machine spin effect (1.2 seconds)
+            let elapsed = 0;
+            const duration = 1200;
+            const intervalTime = 75;
+            const timer = setInterval(() => {
+                const tempD1 = Math.floor(Math.random() * 6) + 1;
+                const tempD2 = Math.floor(Math.random() * 6) + 1;
+                
+                const d1El = document.getElementById("dice-1");
+                const d2El = document.getElementById("dice-2");
+                if (d1El) d1El.innerText = tempD1;
+                if (d2El) d2El.innerText = tempD2;
+                
+                elapsed += intervalTime;
+
+                if (elapsed >= duration) {
+                    clearInterval(timer);
+                    if (d1El) d1El.innerText = d1;
+                    if (d2El) d2El.innerText = d2;
+
+                    // Sequential player hopping animation
+                    if (finalPos !== player.position) {
+                        let tempPos = player.position;
+                        let stepsTaken = 0;
+                        const totalSteps = (isJailed && finalPos === player.position) ? 0 : steps;
+
+                        if (totalSteps > 0) {
+                            const moveInterval = setInterval(() => {
+                                removeLocalToken(playerId, tempPos);
+                                tempPos = (tempPos + 1) % 40;
+                                addLocalToken(playerId, player.avatar, player.name, tempPos);
+
+                                stepsTaken++;
+                                if (stepsTaken >= totalSteps) {
+                                    clearInterval(moveInterval);
+                                    executeLandingLogic(player, d1, d2, isDouble, finalPos, isJailed, turnsLeft, logMsg);
+                                }
+                            }, 180);
+                        } else {
+                            executeLandingLogic(player, d1, d2, isDouble, finalPos, isJailed, turnsLeft, logMsg);
+                        }
+                    } else {
+                        executeLandingLogic(player, d1, d2, isDouble, finalPos, isJailed, turnsLeft, logMsg);
+                    }
+                }
+            }, intervalTime);
+        }
+
+        // Shared helper function to cleanly update and resolve player debt transitions
+        function savePlayerState(player, extraUpdates = {}) {
+            if (!gameState || !gameState.players) return;
+            player.netWorth = calculateNetworth(player);
+            
+            if (player.inDebt && player.cash >= 0) {
+                player.inDebt = false;
+                player.pendingLoanSharkKill = false;
+                
+                const playerIds = Object.keys(gameState.players);
+                const currentIndex = playerIds.indexOf(player.id);
+                let nextIndex = (currentIndex + 1) % playerIds.length;
+                while (gameState.players[playerIds[nextIndex]].isBankrupt && nextIndex !== currentIndex) {
+                    nextIndex = (nextIndex + 1) % playerIds.length;
+                }
+                
+                const updates = { ...extraUpdates };
+                updates[`players/${player.id}`] = player;
+                updates["currentTurnPlayerId"] = playerIds[nextIndex];
+                
+                update(ref(db, `rooms/${roomCode}`), updates);
+                logHistory(`${player.name} đã xử lý xong khoản nợ, lượt chơi chính thức được chuyển tiếp.`);
+            } else {
+                const updates = { ...extraUpdates };
+                updates[`players/${player.id}`] = player;
+                update(ref(db, `rooms/${roomCode}/players/${player.id}`), player);
+            }
+        }
+
+        // Declare manual bankruptcy
+        function declareBankruptcy() {
+            if (!gameState || !gameState.players) return;
+            const player = gameState.players[playerId];
+            if (!player) return;
+            const isLoanSharkDeath = player.pendingLoanSharkKill === true;
+
+            const confirmMsg = isLoanSharkDeath 
+                ? "Bạn không đủ khả năng trả nợ tín dụng đen. Xác nhận phá sản sẽ dẫn đến hậu quả nghiêm trọng hơn bình thường. Tiếp tục?"
+                : "Bạn có chắc chắn muốn tuyên bố phá sản? Hành động này không thể hoàn tác, bạn sẽ bị loại khỏi ván đấu.";
+
+            if (!confirm(confirmMsg)) return;
+
+            player.isBankrupt = true;
+            player.inDebt = false;
+
+            const updates = {};
+            Object.keys(gameState.properties || {}).forEach(idx => {
+                if (gameState.properties[idx].ownerId === playerId) {
+                    updates[`properties/${idx}`] = null;
+                }
+            });
+
+            updates[`players/${playerId}`] = player;
+
+            const playerIds = Object.keys(gameState.players);
+            const currentIndex = playerIds.indexOf(playerId);
+            let nextIndex = (currentIndex + 1) % playerIds.length;
+            while (gameState.players[playerIds[nextIndex]].isBankrupt && nextIndex !== currentIndex) {
+                nextIndex = (nextIndex + 1) % playerIds.length;
+            }
+            updates["currentTurnPlayerId"] = playerIds[nextIndex];
+
+            update(ref(db, `rooms/${roomCode}`), updates).then(() => {
+                if (isLoanSharkDeath) {
+                    const randomMsg = LOANSHARK_DEATH_MESSAGES[Math.floor(Math.random() * LOANSHARK_DEATH_MESSAGES.length)];
+                    const deathTitle = document.getElementById("loanshark-death-title");
+                    if (deathTitle) deathTitle.innerText = randomMsg.title;
+                    const deathBody = document.getElementById("loanshark-death-body");
+                    if (deathBody) deathBody.innerText = randomMsg.body;
+                    
+                    const modalDeath = document.getElementById("modal-loanshark-death");
+                    if (modalDeath) modalDeath.classList.remove("hidden");
+                    logHistory(`${player.name} không thể trả nợ tín dụng đen và đã tuyên bố phá sản.`);
+                } else {
+                    const randomMsg = BANKRUPTCY_ENDING_MESSAGES[Math.floor(Math.random() * BANKRUPTCY_ENDING_MESSAGES.length)];
+                    const bankruptcyTitle = document.getElementById("bankruptcy-ending-title");
+                    if (bankruptcyTitle) bankruptcyTitle.innerText = randomMsg.title;
+                    const bankruptcyBody = document.getElementById("bankruptcy-ending-body");
+                    if (bankruptcyBody) bankruptcyBody.innerText = randomMsg.body;
+                    
+                    const modalBankruptcy = document.getElementById("modal-bankruptcy-ending");
+                    if (modalBankruptcy) modalBankruptcy.classList.remove("hidden");
+                    logHistory(`${player.name} đã tuyên bố phá sản và rời khỏi cuộc chơi.`);
+                }
+            });
+        }
+
+        // Repay the Loan Shark debt actively
+        function repayLoanShark() {
+            if (!gameState || !gameState.players) return;
+            const player = gameState.players[playerId];
+            if (!player) return;
+            const debt = player.loans ? (player.loans.loanShark || 0) : 0;
+
+            if (debt <= 0) {
+                alert("Bạn không có khoản nợ tín dụng đen nào!");
+                return;
+            }
+            if (player.cash < debt) {
+                alert("Số dư tiền mặt không đủ để trả hết nợ! Cần " + debt + "đ, bạn chỉ có " + player.cash + "đ.");
+                return;
+            }
+
+            player.cash -= debt;
+            player.loans.loanShark = 0;
+            player.loans.loanSharkTurns = 0;
+            player.netWorth = calculateNetworth(player);
+            set(ref(db, `rooms/${roomCode}/players/${playerId}`), player);
+            logHistory(`${player.name} đã tất toán toàn bộ khoản nợ tín dụng đen ${debt}đ, thoát khỏi nguy hiểm.`);
+        }
+        window.repayLoanShark = repayLoanShark;
+
+        // End current player turn and apply macroeconomic effects (Nâng cấp Chu kỳ Kinh tế vĩ mô mới)
+        function endTurn() {
+            if (!gameState || !gameState.players) return;
+            if (gameState.currentTurnPlayerId !== playerId) return;
+            
+            const playerIds = Object.keys(gameState.players);
+            const currentIndex = playerIds.indexOf(playerId);
+            let nextIndex = (currentIndex + 1) % playerIds.length;
+            
+            while (gameState.players[playerIds[nextIndex]].isBankrupt && nextIndex !== currentIndex) {
+                nextIndex = (nextIndex + 1) % playerIds.length;
+            }
+
+            const player = gameState.players[playerId];
+            if (!player) return;
+            let logMsg = `${player.name} hoàn tất lượt đi của mình.`;
+            player.hasRolledThisTurn = false;
+            player.hasPlayedCasinoThisTurn = false;
+
+            if (player.loans && player.loans.bank > 0) {
+                const interest = Math.round(player.loans.bank * 0.05);
+                player.cash -= interest;
+                logMsg += ` Chi trả lãi suất vay ngân hàng -${interest}đ.`;
+            }
+
+            if (player.loans && player.loans.loanShark > 0) {
+                player.loans.loanSharkTurns = (player.loans.loanSharkTurns || 0) + 1;
+
+                if (player.loans.loanSharkTurns >= 4) {
+                    const totalDebt = player.loans.loanShark;
+                    player.cash -= totalDebt;
+                    player.loans.loanShark = 0;
+                    player.loans.loanSharkTurns = 0;
+                    player.pendingLoanSharkKill = true;
+                    logMsg += ` [Tín Dụng Đen] Khoản vay đã đáo hạn! Trừ thẳng ${totalDebt}đ (gốc + lãi kép) vào tài khoản của bạn.`;
+                } else {
+                    const interest = Math.round(player.loans.loanShark * 0.2);
+                    player.loans.loanShark += interest;
+                    logMsg += ` [Tín Dụng Đen] Lãi suất kép 20% cộng dồn: +${interest}đ (Tổng nợ hiện tại: ${player.loans.loanShark}đ, Vòng ${player.loans.loanSharkTurns}/4).`;
+                }
+            }
+
+            if (player.savings && player.savings.amount > 0) {
+                player.savings.dueInTurns -= 1;
+                if (player.savings.dueInTurns <= 0) {
+                    const payout = player.savings.amount + Math.round(player.savings.amount * player.savings.rate);
+                    player.cash += payout;
+                    logMsg += ` Sổ tiết kiệm đáo hạn! Nhận về +${payout}đ gốc và lãi suất gửi.`;
+                    player.savings = { amount: 0, rate: 0, dueInTurns: 0 };
+                }
+            }
+
+            if (player.insurance && player.insurance.active) {
+                player.cash -= player.insurance.costPerTurn;
+                logMsg += ` Trích đóng kỳ phí bảo hiểm tài sản -${player.insurance.costPerTurn}đ.`;
+            }
+
+            // --- Land Mortgage Countdown ---
+            const propUpdates = {};
+            Object.keys(gameState.properties || {}).forEach(idx => {
+                const prop = gameState.properties[idx];
+                if (prop.ownerId === playerId && prop.isMortgaged) {
+                    prop.mortgageTurnsLeft = (prop.mortgageTurnsLeft || 5) - 1;
+                    if (prop.mortgageTurnsLeft <= 0) {
+                        propUpdates[`properties/${idx}`] = null;
+                        logMsg += ` [Tịch Thu] Quá hạn thế chấp, ngân hàng tịch thu vĩnh viễn đất ô ${TILES[idx].name}.`;
+                    } else {
+                        propUpdates[`properties/${idx}`] = prop;
+                    }
+                }
+            });
+
+            // Khai báo đối tượng updates dùng chung
+            const updates = { ...propUpdates };
+
+            // Reset trạng thái khai thác của các ô tài nguyên thuộc sở hữu người chơi vừa kết thúc lượt
+            Object.keys(RESOURCE_TILES).forEach(tileIdx => {
+                const prop = gameState.properties ? gameState.properties[tileIdx] : null;
+                if (prop && prop.ownerId === playerId) {
+                    updates[`properties/${tileIdx}/hasExtractedThisTurn`] = false;
+                }
+            });
+
+            // --- Kiểm tra Bầu Cử Tổng Thống (mỗi 4 vòng) ---
+            let turnsSinceElection = (gameState.turnsSinceLastElection || 0) + 1;
+            let presidentElectResult = null;
+
+            if (turnsSinceElection >= 4) {
+                turnsSinceElection = 0;
+                const candidates = Object.values(gameState.players).filter(p => p.politicalRank === 4 && !p.isBankrupt);
+
+                if (candidates.length > 0) {
+                    const winners = candidates.filter(() => Math.random() < 0.2);
+                    if (winners.length > 0) {
+                        presidentElectResult = winners[Math.floor(Math.random() * winners.length)];
+                    }
+                }
+            }
+
+            updates["turnsSinceLastElection"] = turnsSinceElection;
+
+            if (presidentElectResult) {
+                updates["presidentElected"] = {
+                    playerId: presidentElectResult.id,
+                    playerName: presidentElectResult.name,
+                    timestamp: Date.now()
+                };
+                logMsg += ` [BẦU CỬ] ${presidentElectResult.name} đã CHÍNH THỨC ĐẮC CỬ TỔNG THỐNG!`;
+            }
+
+            // --- Xử lý Chu Kỳ Kinh Tế Vĩ Mô mới ---
+            let economyPhase = gameState.economyPhase || "Hồi Phục";
+            let turnsInPhase = (gameState.economyTurnsInPhase || 0) + 1;
+            let pendingTransition = gameState.economyPendingTransition || null;
+            let stocksAfterFluctuation;
+
+            if (pendingTransition) {
+                // Đang trong cửa sổ tín hiệu ngầm
+                pendingTransition.turnsRemaining -= 1;
+
+                if (pendingTransition.turnsRemaining <= 0) {
+                    if (pendingTransition.isFalseSignal) {
+                        // Báo động giả, hủy bỏ, không đổi gì
+                        pendingTransition = null;
+                    } else {
+                        // Chính thức chuyển pha + áp dụng cú sốc
+                        economyPhase = pendingTransition.targetPhase;
+                        turnsInPhase = 0;
+                        gameState.stocks = applyPhaseShock(economyPhase, gameState.stocks);
+                        logMsg += ` [VĨ MÔ] Nền kinh tế chính thức chuyển sang giai đoạn "${economyPhase}"! Thị trường chứng khoán phản ứng mạnh.`;
+                        pendingTransition = null;
+                    }
+                }
+            } else {
+                // Kiểm tra điều kiện tối thiểu trước khi xét chuyển pha
+                const duration = ECONOMY_DURATION[economyPhase];
+                if (turnsInPhase >= duration.min) {
+                    let target = checkPhaseTransition(economyPhase, turnsInPhase);
+
+                    // Ép buộc chuyển nếu chạm mốc tối đa
+                    if (!target && turnsInPhase >= duration.max) {
+                        if (economyPhase === "Hồi Phục") target = "Tăng Trưởng";
+                        else if (economyPhase === "Tăng Trưởng") target = "Suy Thoái";
+                        else if (economyPhase === "Suy Thoái") target = Math.random() < 0.5 ? "Đại Khủng Hoảng" : "Hồi Phục";
+                        else if (economyPhase === "Đại Khủng Hoảng") target = "Hồi Phục";
+                    }
+
+                    if (target) {
+                        pendingTransition = {
+                            targetPhase: target,
+                            windowLength: 2 + Math.floor(Math.random() * 2),
+                            turnsRemaining: 2 + Math.floor(Math.random() * 2),
+                            isFalseSignal: Math.random() < 0.22
+                        };
+                    }
+                }
+            }
+
+            // Luôn tính toán biến động giá cổ phiếu mỗi lượt
+            stocksAfterFluctuation = triggerStockFluctuations(gameState.stocks, economyPhase, pendingTransition);
+
+            // --- Biến Động Thị Trường Hàng Hóa ---
+            const nextCommodities = triggerCommodityFluctuations(gameState.commodities || {
+                RICE: { price: 600, trend: [600] },
+                OIL: { price: 600, trend: [600] },
+                DIAMOND: { price: 600, trend: [600] }
+            });
+            updates["commodities"] = nextCommodities;
+
+            // --- Stock Mortgage Countdown ---
+            if (player.pledgedStocks) {
+                ["TECH", "RESORT", "STAPLE"].forEach(sym => {
+                    const pledge = player.pledgedStocks[sym];
+                    if (pledge && pledge.qty > 0) {
+                        pledge.turnsLeft = (pledge.turnsLeft || 6) - 1;
+                        if (pledge.turnsLeft <= 0) {
+                            const currentPrice = stocksAfterFluctuation[sym].price;
+                            const saleRevenue = pledge.qty * currentPrice;
+                            const redeemCost = Math.round(pledge.loanAmount * 1.3);
+
+                            player.stocks[sym] -= pledge.qty;
+
+                            if (saleRevenue >= redeemCost) {
+                                const refund = saleRevenue - redeemCost;
+                                player.cash += refund;
+                                logMsg += ` [Thanh Lý] Quá hạn thế chấp ${sym}, hệ thống bán thanh lý ${pledge.qty} CP để trả nợ và hoàn dư +${refund}đ.`;
+                            } else {
+                                logMsg += ` [Thanh Lý] Quá hạn thế chấp ${sym}, hệ thống bán thanh lý ${pledge.qty} CP thu hồi nợ.`;
+                            }
+
+                            player.pledgedStocks[sym] = { qty: 0, loanAmount: 0, turnsLeft: 0 };
+                        }
+                    }
+                });
+            }
+
+            updates["economyPhase"] = economyPhase;
+            updates["economyTurnsInPhase"] = turnsInPhase;
+            updates["economyPendingTransition"] = pendingTransition;
+            updates["stocks"] = stocksAfterFluctuation;
+
+            player.netWorth = calculateNetworth(player, stocksAfterFluctuation);
+
+            if (player.cash < 0) {
+                player.inDebt = true;
+                logMsg += ` [Báo nợ] Tài khoản bị âm ${player.cash}đ do các chi phí bắt buộc. Cần tự tay giải vây nợ hoặc tuyên bố phá sản!`;
+                
+                updates[`players/${playerId}`] = player;
+                update(ref(db, `rooms/${roomCode}`), updates);
+                logHistory(logMsg);
+                closeModal();
+                return;
+            }
+
+            player.inDebt = false;
+            updates[`players/${playerId}`] = player;
+            updates["currentTurnPlayerId"] = playerIds[nextIndex];
+            
+            update(ref(db, `rooms/${roomCode}`), updates);
+            logHistory(logMsg);
+            closeModal();
+        }
+
+        // Calculate Networth values accurately
+        function calculateNetworth(p, tempStocks = null) {
+            if (!gameState) return p.cash;
+            let val = p.cash;
+            Object.keys(gameState.properties || {}).forEach(tileId => {
+                const prop = gameState.properties[tileId];
+                if (prop.ownerId === p.id) {
+                    const meta = TILES[tileId];
+                    if (meta) {
+                        if (!prop.isMortgaged) {
+                            val += (meta.cost || 0);
+                            val += (prop.houses || 0) * 500;
+                        } else {
+                            val += Math.round((meta.cost || 0) * 0.5);
+                        }
+                    }
+                }
+            });
+            Object.keys(p.stocks || {}).forEach(sym => {
+                const qty = p.stocks[sym] || 0;
+                let price = 100;
+                if (tempStocks && tempStocks[sym]) {
+                    price = tempStocks[sym].price;
+                } else if (gameState.stocks && gameState.stocks[sym]) {
+                    price = gameState.stocks[sym].price;
+                }
+                val += qty * price;
+            });
+            // Cộng thêm giá trị hàng hóa tồn kho vào tài sản ròng
+            if (p.commodityInventory && gameState.commodities) {
+                Object.keys(p.commodityInventory).forEach(type => {
+                    const qty = p.commodityInventory[type] || 0;
+                    const price = gameState.commodities[type] ? gameState.commodities[type].price : 600;
+                    val += qty * price;
+                });
+            }
+            if (p.savings && p.savings.amount > 0) {
+                val += p.savings.amount;
+            }
+            if (p.pledgedStocks) {
+                ["TECH", "RESORT", "STAPLE"].forEach(sym => {
+                    const pledge = p.pledgedStocks[sym];
+                    if (pledge && pledge.qty > 0) {
+                        val -= Math.round(pledge.loanAmount * 1.3);
+                    }
+                });
+            }
+            if (p.loans) {
+                val -= (p.loans.bank || 0);
+                val -= (p.loans.loanShark || 0);
+            }
+            return val;
+        }
+
+        // Buying / Construction handlers
+        function buyProperty() {
+            if (!gameState || !gameState.players) return;
+            const player = gameState.players[playerId];
+            if (!player) return;
+            const tileIndex = player.position;
+            const tile = TILES[tileIndex];
+
+            if (player.cash < tile.cost) {
+                alert("Dư nợ tiền mặt hiện hành không đủ!");
+                return;
+            }
+
+            player.cash -= tile.cost;
+            player.netWorth = calculateNetworth(player);
+
+            const updates = {};
+            updates[`players/${playerId}`] = player;
+            updates[`properties/${tileIndex}`] = {
+                ownerId: playerId,
+                houses: 0,
+                isMortgaged: false,
+                hasExtractedThisTurn: false // Khởi tạo trạng thái khai thác
+            };
+
+            update(ref(db, `rooms/${roomCode}`), updates);
+            logHistory(`${player.name} tiến hành chi tiền mua đứt bất động sản ${tile.name} giá ${tile.cost}đ.`);
+            closeModal();
+        }
+
+        // Build house upgrades
+        function buildHouse(tileId) {
+            if (!gameState || !gameState.players) return;
+            const prop = gameState.properties ? gameState.properties[tileId] : null;
+            const player = gameState.players[playerId];
+            if (!prop || !player) return;
+            const cost = 500;
+
+            if (player.cash < cost) {
+                alert("Số dư tiền mặt không đủ chi trả!");
+                return;
+            }
+            if (prop.houses >= 5) {
+                alert("Bất động sản đạt quy mô tối đa!");
+                return;
+            }
+
+            player.cash -= cost;
+            prop.houses += 1;
+            player.netWorth = calculateNetworth(player);
+
+            const updates = {};
+            updates[`properties/${tileId}`] = prop;
+            updates[`players/${playerId}`] = player;
+
+            update(ref(db, `rooms/${roomCode}`), updates);
+            logHistory(`${player.name} nâng cấp 1 tầng xây dựng cho ô ${TILES[tileId].name}.`);
+        }
+
+        function handleMortgage(tileId) {
+            if (!gameState || !gameState.players) return;
+            const prop = gameState.properties ? gameState.properties[tileId] : null;
+            const player = gameState.players[playerId];
+            const meta = TILES[tileId];
+            if (!prop || !player || !meta) return;
+            const payout = Math.round(meta.cost * 0.5);
+
+            prop.isMortgaged = true;
+            prop.mortgageTurnsLeft = 5;
+            player.cash += payout;
+
+            const extraUpdates = {};
+            extraUpdates[`properties/${tileId}`] = prop;
+
+            savePlayerState(player, extraUpdates);
+            logHistory(`${player.name} cầm thế chấp ô đất ${meta.name} thu hồi vốn +${payout}đ. Thời hạn giải chấp: 5 lượt.`);
+        }
+
+        function handleRedeem(tileId) {
+            if (!gameState || !gameState.players) return;
+            const prop = gameState.properties ? gameState.properties[tileId] : null;
+            const player = gameState.players[playerId];
+            const meta = TILES[tileId];
+            if (!prop || !player || !meta) return;
+            const cost = Math.round(meta.cost * 0.55);
+
+            if (player.cash < cost) {
+                alert("Số dư tiền mặt không đủ chuộc đất!");
+                return;
+            }
+
+            prop.isMortgaged = false;
+            player.cash -= cost;
+
+            const extraUpdates = {};
+            extraUpdates[`properties/${tileId}`] = prop;
+
+            savePlayerState(player, extraUpdates);
+            logHistory(`${player.name} giải chấp chuộc lại bất động sản ${meta.name} phí ${cost}đ.`);
+        }
+
+        // Financial modules: loans
+        function takeBankLoan() {
+            if (!gameState || !gameState.players) return;
+            const player = gameState.players[playerId];
+            if (!player) return;
+            const amount = 2000;
+            if (!player.loans) {
+                player.loans = { bank: 0, loanShark: 0, loanSharkTurns: 0, loanSharkMaxTurns: 4 };
+            }
+            player.loans.bank = (player.loans.bank || 0) + amount;
+            player.cash += amount;
+            player.netWorth = calculateNetworth(player);
+            set(ref(db, `rooms/${roomCode}/players/${playerId}`), player);
+            logHistory(`${player.name} giải ngân thành công vốn vay ngân hàng +${amount}đ.`);
+        }
+
+        // Obtain Loan Shark debt actively
+        function takeLoanShark() {
+            if (!gameState || !gameState.players) return;
+            const player = gameState.players[playerId];
+            if (!player) return;
+            if (player.loans && player.loans.loanShark > 0) {
+                alert("Bạn đang có khoản vay tín dụng đen chưa trả hết! Không thể vay thêm cho tới khi thanh toán xong.");
+                return;
+            }
+            const amount = 3000;
+            if (!player.loans) {
+                player.loans = { bank: 0, loanShark: 0, loanSharkTurns: 0, loanSharkMaxTurns: 4 };
+            }
+            player.loans.loanShark = amount;
+            player.loans.loanSharkTurns = 0;
+            player.cash += amount;
+            player.netWorth = calculateNetworth(player);
+            set(ref(db, `rooms/${roomCode}/players/${playerId}`), player);
+            logHistory(`${player.name} vay khẩn cấp tín dụng đen +${amount}đ. CẢNH BÁO: Lãi suất kép 20%/vòng, hạn chót 4 vòng, không trả đúng hạn sẽ bị thanh trừng!`);
+        }
+
+        function depositSavings() {
+            if (!gameState || !gameState.players) return;
+            const player = gameState.players[playerId];
+            if (!player) return;
+            const amount = 1500;
+            if (player.cash < amount) {
+                alert("Số dư khả dụng không đủ gửi tiết kiệm!");
+                return;
+            }
+            player.cash -= amount;
+            player.savings = { amount: amount, rate: 0.1, dueInTurns: 3 }; 
+            set(ref(db, `rooms/${roomCode}/players/${playerId}`), player);
+            logHistory(`${player.name} mở sổ gửi tiết kiệm kỳ hạn 3 vòng quay.`);
+        }
+
+        function buyInsurance() {
+            if (!gameState || !gameState.players) return;
+            const player = gameState.players[playerId];
+            if (!player) return;
+            player.insurance = { active: true, costPerTurn: 15 };
+            set(ref(db, `rooms/${roomCode}/players/${playerId}`), player);
+            logHistory(`${player.name} đã đóng nộp phí đăng ký mua bảo hiểm phòng ngừa rủi ro thiên tai.`);
+        }
+
+        // Trading actions
+        function sendTradeProposal() {
+            const partnerId = document.getElementById("select-partner").value;
+            if (!partnerId) {
+                alert("Yêu cầu lựa chọn đối tác chuyển nhượng!");
+                return;
+            }
+
+            const offerCash = parseInt(document.getElementById("trade-offer-cash").value) || 0;
+            const reqCash = parseInt(document.getElementById("trade-req-cash").value) || 0;
+
+            const offerProps = [];
+            document.querySelectorAll(".offer-prop-check:checked").forEach(el => {
+                offerProps.push(parseInt(el.value));
+            });
+
+            const reqProps = [];
+            document.querySelectorAll(".req-prop-check:checked").forEach(el => {
+                reqProps.push(parseInt(el.value));
+            });
+
+            const proposal = {
+                senderId: playerId,
+                receiverId: partnerId,
+                offerCash: offerCash,
+                reqCash: reqCash,
+                offerProps: offerProps,
+                reqProps: reqProps,
+                status: "PENDING"
+            };
+
+            set(ref(db, `rooms/${roomCode}/dealProposal`), proposal);
+            logHistory(`${gameState.players[playerId].name} khởi động hồ sơ thương lượng mới.`);
+            alert("Đã gửi đề xuất giao dịch đi!");
+            closeModal();
+        }
+
+        // Đông thế chấp cổ phiếu
+        function pledgeStock(sym, qty) {
+            if (!gameState || !gameState.players) return;
+            const player = gameState.players[playerId];
+            const stock = gameState.stocks ? gameState.stocks[sym] : null;
+            if (!player || !stock) return;
+
+            if (qty <= 0) {
+                alert("Vui lòng nhập số lượng hợp lệ!");
+                return;
+            }
+
+            const currentPrice = stock.price;
+            const loanAmount = Math.round(currentPrice * 0.5 * qty);
+
+            if (!player.pledgedStocks) {
+                player.pledgedStocks = {
+                    TECH: { qty: 0, loanAmount: 0, turnsLeft: 0 },
+                    RESORT: { qty: 0, loanAmount: 0, turnsLeft: 0 },
+                    STAPLE: { qty: 0, loanAmount: 0, turnsLeft: 0 }
+                };
+            }
+
+            player.pledgedStocks[sym].qty += qty;
+            player.pledgedStocks[sym].loanAmount += loanAmount;
+            player.pledgedStocks[sym].turnsLeft = 6;
+            player.cash += loanAmount;
+            player.netWorth = calculateNetworth(player);
+
+            set(ref(db, `rooms/${roomCode}/players/${playerId}`), player);
+            logHistory(`${player.name} thế chấp ${qty} CP ${sym} nhận khoản vay ngân hàng +${loanAmount}đ.`);
+            openModal("bank");
+        }
+        window.pledgeStock = pledgeStock;
+
+        // Giải chấp cổ phiếu
+        function redeemStock(sym) {
+            if (!gameState || !gameState.players) return;
+            const player = gameState.players[playerId];
+            if (!player || !player.pledgedStocks) return;
+
+            const pledged = player.pledgedStocks[sym];
+            const redeemCost = Math.round(pledged.loanAmount * 1.3);
+
+            if (player.cash < redeemCost) {
+                alert(`Không đủ tiền để chuộc! Cần ${redeemCost}đ, bạn chỉ có ${player.cash}đ.`);
+                return;
+            }
+
+            player.cash -= redeemCost;
+            player.pledgedStocks[sym] = { qty: 0, loanAmount: 0, turnsLeft: 0 };
+            player.netWorth = calculateNetworth(player);
+
+            set(ref(db, `rooms/${roomCode}/players/${playerId}`), player);
+            logHistory(`${player.name} tất toán giải chấp cổ phiếu ${sym} với chi phí chuộc ${redeemCost}đ.`);
+            openModal("bank");
+        }
+        window.redeemStock = redeemStock;
+
+        function acceptTradeProposal() {
+            if (!gameState || !gameState.players) return;
+            const deal = gameState.dealProposal;
+            if (!deal) return;
+            const sender = gameState.players[deal.senderId];
+            const receiver = gameState.players[deal.receiverId];
+            if (!sender || !receiver) return;
+
+            if (sender.cash < deal.offerCash || receiver.cash < deal.reqCash) {
+                alert("Số dư khả dụng của một trong hai bên không đủ đáp ứng cam kết!");
+                return;
+            }
+
+            sender.cash = sender.cash - deal.offerCash + deal.reqCash;
+            receiver.cash = receiver.cash - deal.reqCash + deal.offerCash;
+
+            const updatedProps = { ...gameState.properties };
+            if (deal.offerProps) {
+                deal.offerProps.forEach(id => {
+                    if (updatedProps[id]) updatedProps[id].ownerId = deal.receiverId;
+                });
+            }
+            if (deal.reqProps) {
+                deal.reqProps.forEach(id => {
+                    if (updatedProps[id]) updatedProps[id].ownerId = deal.senderId;
+                });
+            }
+
+            sender.netWorth = calculateNetworth(sender);
+            receiver.netWorth = calculateNetworth(receiver);
+
+            const updates = {};
+            updates["properties"] = updatedProps;
+            updates["dealProposal"] = null;
+
+            if (sender.inDebt && sender.cash >= 0) {
+                sender.inDebt = false;
+                sender.pendingLoanSharkKill = false;
+                logHistory(`${sender.name} đã xử lý xong khoản nợ nhờ giao dịch thương mại.`);
+            }
+            if (receiver.inDebt && receiver.cash >= 0) {
+                receiver.inDebt = false;
+                receiver.pendingLoanSharkKill = false;
+                logHistory(`${receiver.name} đã xử lý xong khoản nợ nhờ giao dịch thương mại.`);
+            }
+
+            updates[`players/${deal.senderId}`] = sender;
+            updates[`players/${deal.receiverId}`] = receiver;
+
+            const activeId = gameState.currentTurnPlayerId;
+            const activePlayer = activeId === deal.senderId ? sender : activeId === deal.receiverId ? receiver : null;
+            if (activePlayer && !activePlayer.inDebt) {
+                const playerIds = Object.keys(gameState.players);
+                const currentIndex = playerIds.indexOf(activeId);
+                let nextIndex = (currentIndex + 1) % playerIds.length;
+                while (gameState.players[playerIds[nextIndex]].isBankrupt && nextIndex !== currentIndex) {
+                    nextIndex = (nextIndex + 1) % playerIds.length;
+                }
+                updates["currentTurnPlayerId"] = playerIds[nextIndex];
+                logHistory(`Lượt chơi chính thức được chuyển tiếp sau khi giải quyết xong nợ.`);
+            }
+
+            update(ref(db, `rooms/${roomCode}`), updates);
+            logHistory(`Hồ sơ giao dịch trao đổi tài sản giữa ${sender.name} và ${receiver.name} đã được ký kết.`);
+        }
+
+        function declineTradeProposal() {
+            remove(ref(db, `rooms/${roomCode}/dealProposal`));
+            logHistory(`Đề nghị chuyển đổi tài sản thương lượng đã bị huỷ bỏ.`);
+        }
+
+        // Stock Transactions
+        function tradeStock(sym, action) {
+            if (!gameState || !gameState.players) return;
+            const player = gameState.players[playerId];
+            const stock = gameState.stocks ? gameState.stocks[sym] : null;
+            if (!player || !stock) return;
+            const inputAmt = parseInt(document.getElementById(`stock-amount-${sym}`).value) || 1;
+            const cost = stock.price * inputAmt;
+
+            const pledgedQty = (player.pledgedStocks && player.pledgedStocks[sym]) ? player.pledgedStocks[sym].qty : 0;
+            const available = (player.stocks ? (player.stocks[sym] || 0) : 0) - pledgedQty;
+
+            if (action === "BUY") {
+                if (player.cash < cost) {
+                    alert("Số dư tiền mặt khả dụng không đủ chi trả!");
+                    return;
+                }
+                player.cash -= cost;
+
+                if (!player.stocks) player.stocks = { TECH: 0, RESORT: 0, STAPLE: 0 };
+                const oldQty = player.stocks[sym] || 0;
+                if (!player.avgBuyPrices) {
+                    player.avgBuyPrices = { TECH: 0, RESORT: 0, STAPLE: 0 };
+                }
+                const oldAvg = player.avgBuyPrices[sym] || 0;
+
+                const newQty = oldQty + inputAmt;
+                const newAvg = ((oldAvg * oldQty) + (stock.price * inputAmt)) / newQty;
+
+                player.stocks[sym] = newQty;
+                player.avgBuyPrices[sym] = Math.round(newAvg * 100) / 100;
+
+                logHistory(`${player.name} đã mua ${inputAmt} CP ${sym} giá ${stock.price}đ.`);
+            } else {
+                if (available < inputAmt) {
+                    alert("Số lượng cổ phiếu khả dụng không đủ bán! Bạn đã thế chấp " + pledgedQty + " CP " + sym + ".");
+                    return;
+                }
+                player.cash += cost;
+                player.stocks[sym] -= inputAmt;
+
+                if (player.stocks[sym] <= 0) {
+                    player.stocks[sym] = 0;
+                    if (!player.avgBuyPrices) {
+                        player.avgBuyPrices = { TECH: 0, RESORT: 0, STAPLE: 0 };
+                    }
+                    player.avgBuyPrices[sym] = 0; 
+                }
+
+                logHistory(`${player.name} đã bán thanh khoản ${inputAmt} CP ${sym} giá ${stock.price}đ.`);
+            }
+
+            savePlayerState(player);
+        }
+
+        // BÁN TÀI NGUYÊN COMMODITY
+        function sellCommodity(type) {
+            if (!gameState || !gameState.players) return;
+            const player = gameState.players[playerId];
+            const commodity = gameState.commodities ? gameState.commodities[type] : null;
+            if (!player || !commodity) return;
+            const inputAmt = parseInt(document.getElementById(`commodity-amount-${type}`).value) || 1;
+            const currentQty = player.commodityInventory ? (player.commodityInventory[type] || 0) : 0;
+
+            if (inputAmt > currentQty) {
+                alert("Số lượng bán vượt quá số hàng bạn đang có!");
+                return;
+            }
+
+            const revenue = commodity.price * inputAmt;
+            player.commodityInventory[type] -= inputAmt;
+            player.cash += revenue;
+            player.netWorth = calculateNetworth(player);
+
+            set(ref(db, `rooms/${roomCode}/players/${playerId}`), player);
+            const label = COMMODITY_LABELS[type];
+            logHistory(`${player.name} bán ${inputAmt} ${label.unit} ${label.name} giá ${commodity.price}đ/${label.unit}, thu về +${revenue}đ.`);
+            openModal("commodities"); // Render lại để cập nhật số lượng còn lại
+        }
+        window.sellCommodity = sellCommodity;
+
+        // KHAI THÁC TÀI NGUYÊN TỪ CÁC Ô ĐẤT ĐẶC BIỆT
+        function extractResource(tileIndex) {
+            if (!gameState || !gameState.players) return;
+            const player = gameState.players[playerId];
+            const prop = gameState.properties ? gameState.properties[tileIndex] : null;
+            const resourceType = RESOURCE_TILES[tileIndex];
+
+            if (!prop || prop.ownerId !== playerId) {
+                alert("Bạn không sở hữu ô đất này!");
+                return;
+            }
+            if (gameState.currentTurnPlayerId !== playerId) {
+                alert("Chỉ có thể khai thác trong lượt của chính bạn!");
+                return;
+            }
+            if (prop.hasExtractedThisTurn) {
+                alert("Ô này đã được khai thác trong lượt này rồi! Hãy chờ tới lượt sau.");
+                return;
+            }
+
+            const extractCost = 1000;
+            if (player.cash < extractCost) {
+                alert("Số dư tiền mặt không đủ để khai thác (cần 1000đ)!");
+                return;
+            }
+
+            const yieldAmount = Math.floor(Math.random() * 3) + 1; // Random 1-3
+
+            player.cash -= extractCost;
+            if (!player.commodityInventory) {
+                player.commodityInventory = { RICE: 0, OIL: 0, DIAMOND: 0 };
+            }
+            player.commodityInventory[resourceType] = (player.commodityInventory[resourceType] || 0) + yieldAmount;
+            player.netWorth = calculateNetworth(player);
+
+            const label = COMMODITY_LABELS[resourceType];
+            const updates = {};
+            updates[`properties/${tileIndex}/hasExtractedThisTurn`] = true;
+            updates[`players/${playerId}`] = player;
+
+            update(ref(db, `rooms/${roomCode}`), updates);
+            logHistory(`${player.name} khai thác ${TILES[tileIndex].name}, chi phí 1000đ, thu về ${yieldAmount} ${label.unit} ${label.name}.`);
+            showEventPopup("KHAI THÁC THÀNH CÔNG", `Bạn đã đầu tư 1000đ để khai thác ${TILES[tileIndex].name}.\n\nKết quả: +${yieldAmount} ${label.unit} ${label.name}!\n\nHãy kiểm tra Thị Trường Hàng Hóa để quyết định thời điểm bán phù hợp.`);
+            showTileInfo(tileIndex); // Render lại popup để cập nhật trạng thái nút Khai Thác
+        }
+        window.extractResource = extractResource;
+
+        // Casino mechanics
+        function selectCasinoChoice(choice) {
+            localCasinoChoice = choice;
+            const btnTai = document.getElementById("btn-choice-tai");
+            const btnXiu = document.getElementById("btn-choice-xiu");
+
+            if (btnTai && btnXiu) {
+                if (choice === "Tài") {
+                    btnTai.className = "py-3 rounded-lg font-bold border bg-amber-500 text-gray-950 border-transparent shadow-lg transition-colors";
+                    btnXiu.className = "py-3 rounded-lg font-bold border bg-gray-800 border-gray-700 text-white transition-colors";
+                } else {
+                    btnTai.className = "py-3 rounded-lg font-bold border bg-gray-800 border-gray-700 text-white transition-colors";
+                    btnXiu.className = "py-3 rounded-lg font-bold border bg-amber-500 text-gray-950 border-transparent shadow-lg transition-colors";
+                }
+            }
+        }
+
+        // Play Casino
+        function playCasino() {
+            if (!gameState || !gameState.players) return;
+            const player = gameState.players[playerId];
+            if (!player) return;
+
+            if (player.hasPlayedCasinoThisTurn) {
+                alert("Bạn chỉ được chơi Casino 1 lần mỗi lượt! Hãy chờ tới lượt sau.");
+                return;
+            }
+
+            const bet = parseInt(document.getElementById("input-casino-bet").value) || 0;
+
+            if (bet <= 0) {
+                alert("Vui lòng nhập số tiền cược hợp lệ!");
+                return;
+            }
+            if (player.cash < bet) {
+                alert("Số dư tiền mặt không đủ tham gia cá cược!");
+                return;
+            }
+
+            const roll = Math.random();
+            const isWin = roll < 0.3;
+
+            let d1, d2, d3, total, outcome;
+            let safetyCounter = 0;
+            do {
+                d1 = Math.floor(Math.random() * 6) + 1;
+                d2 = Math.floor(Math.random() * 6) + 1;
+                d3 = Math.floor(Math.random() * 6) + 1;
+                total = d1 + d2 + d3;
+                outcome = total >= 11 ? "Tài" : "Xỉu";
+                safetyCounter++;
+            } while (
+                safetyCounter < 100 &&
+                ((isWin && outcome !== localCasinoChoice) || (!isWin && outcome === localCasinoChoice))
+            );
+
+            player.cash -= bet;
+            player.hasPlayedCasinoThisTurn = true;
+
+            let logMsg = "";
+            let popupTitle = "";
+            let popupBody = "";
+
+            if (isWin) {
+                const winAmt = bet * 2;
+                player.cash += winAmt;
+                popupTitle = "🎉 THẮNG LỚN!";
+                popupBody = `Xúc xắc: [${d1}, ${d2}, ${d3}] = ${total} điểm (${outcome})\nBạn đã chọn: ${localCasinoChoice}\n\nChúc mừng! Bạn thắng cược và nhận về +${winAmt}đ.`;
+                logMsg = `${player.name} chiến thắng đặt cược Casino nhận +${winAmt}đ.`;
+            } else {
+                popupTitle = "💸 THUA CƯỢC!";
+                popupBody = `Xúc xắc: [${d1}, ${d2}, ${d3}] = ${total} điểm (${outcome})\nBạn đã chọn: ${localCasinoChoice}\n\nRất tiếc, bạn đã mất trắng ${bet}đ tiền cược.`;
+                logMsg = `${player.name} đặt cược thất bại mất trắng -${bet}đ tại sòng bạc Casino.`;
+            }
+
+            player.netWorth = calculateNetworth(player);
+            set(ref(db, `rooms/${roomCode}/players/${playerId}`), player);
+            logHistory(logMsg);
+            
+            closeModal();
+            showEventPopup(popupTitle, popupBody);
+        }
+
+        // Education triggers
+        function studyCareer() {
+            if (!gameState || !gameState.players) return;
+            const player = gameState.players[playerId];
+            if (!player) return;
+            const fee = 1000;
+
+            if (player.cash < fee) {
+                alert("Số dư tài chính không đủ học phí!");
+                return;
+            }
+
+            player.cash -= fee;
+            const isPass = Math.random() >= 0.3;
+
+            let popupTitle = "";
+            let popupBody = "";
+
+            if (!isPass) {
+                popupTitle = "❌ KẾT QUẢ: THI TRƯỢT";
+                popupBody = `Rất tiếc! Bạn đã không vượt qua bài kiểm tra năng lực lần này.\n\nHọc phí ${fee}đ đã bị mất, bạn vẫn giữ nguyên trình độ hiện tại: "${player.career.level}".\n\nĐừng nản lòng, hãy thử lại ở lượt sau!`;
+                logHistory(`${player.name} không vượt qua bài kiểm tra năng lực, trượt chứng chỉ nghề.`);
+            } else {
+                let nextLvl = "Nghề chuyên môn";
+                let newSalary = 500;
+                if (player.career.level === "Nghề chuyên môn") {
+                    nextLvl = "Chuyên gia";
+                    newSalary = 1000;
+                }
+                const oldLvl = player.career.level;
+                player.career = { level: nextLvl, salary: newSalary };
+
+                popupTitle = "✅ KẾT QUẢ: THI ĐỖ";
+                popupBody = `Xuất sắc! Bạn đã vượt qua bài kiểm tra năng lực.\n\nTrình độ nâng cấp: "${oldLvl}" → "${nextLvl}"\nMức lương mới mỗi khi qua ô Start: ${newSalary}đ/vòng.\n\nSự nghiệp của bạn đang trên đà phát triển!`;
+                logHistory(`${player.name} thi đỗ nâng ngạch lên bậc "${nextLvl}". Lương nâng định kỳ thành +${newSalary}đ.`);
+            }
+
+            player.netWorth = calculateNetworth(player);
+            set(ref(db, `rooms/${roomCode}/players/${playerId}`), player);
+            closeModal();
+            showEventPopup(popupTitle, popupBody);
+        }
+
+        // Helper to determine base rents
+        function calculateRent(tileIndex) {
+            const tile = TILES[tileIndex];
+            const prop = gameState.properties ? gameState.properties[tileIndex] : null;
+            if (!tile || !prop) return 0;
+
+            const multipliers = [1, 2, 4, 6, 8, 12];
+            const multiplier = multipliers[prop.houses || 0];
+            return tile.rent * multiplier;
+        }
+
+        // --- HÀM XỬ LÝ THĂNG CẤP CHÍNH TRỊ ---
+        function donateToPoliticalFund() {
+            const player = gameState.players[playerId];
+            if (player.politicalRank !== 0) {
+                alert("Bạn đã ở bậc chính trị cao hơn rồi!");
+                return;
+            }
+            const cost = 1000;
+            if (player.cash < cost) {
+                alert("Số dư tiền mặt không đủ (cần 1000đ)!");
+                return;
+            }
+            player.cash -= cost;
+            player.politicalRank = 1;
+            player.netWorth = calculateNetworth(player);
+            set(ref(db, `rooms/${roomCode}/players/${playerId}`), player);
+            logHistory(`${player.name} quyên góp 1000đ vào Quỹ Chính Trị, trở thành Ứng Viên Hội Đồng.`);
+            showEventPopup("THĂNG TIẾN CHÍNH TRỊ", "Bạn đã chính thức trở thành Ứng Viên Hội Đồng! Con đường chính trị bắt đầu từ đây.");
+            openModal("political");
+        }
+        window.donateToPoliticalFund = donateToPoliticalFund;
+
+        function donateLandForPolitics(requiredCount, nextRank, nextRankName) {
+            const player = gameState.players[playerId];
+            const myProps = Object.keys(gameState.properties || {}).filter(idx => gameState.properties[idx] && gameState.properties[idx].ownerId === playerId);
+
+            if (myProps.length < requiredCount) {
+                alert(`Bạn cần sở hữu ít nhất ${requiredCount} mảnh đất để hiến tặng!`);
+                return;
+            }
+
+            const selected = myProps.slice(0, requiredCount); // Lấy đủ số lượng đầu tiên tìm thấy
+            const updates = {};
+            selected.forEach(idx => {
+                updates[`properties/${idx}`] = null;
+            });
+
+            player.politicalRank = nextRank;
+            updates[`players/${playerId}`] = player;
+
+            update(ref(db, `rooms/${roomCode}`), updates);
+            logHistory(`${player.name} hiến tặng ${requiredCount} mảnh đất cho Quỹ Công, thăng cấp thành ${nextRankName}.`);
+            showEventPopup("THĂNG TIẾN CHÍNH TRỊ", `Bạn đã hiến tặng ${requiredCount} mảnh đất cho đất nước và chính thức trở thành ${nextRankName}!`);
+            openModal("political");
+        }
+        window.donateLandForPolitics = donateLandForPolitics;
+
+        function bribeForPresidentialCandidacy() {
+            const player = gameState.players[playerId];
+            if (player.politicalRank !== 3) {
+                alert("Bạn cần đạt bậc Thị Trưởng trước!");
+                return;
+            }
+            const cost = 50000;
+            if (player.cash < cost) {
+                alert("Số dư tiền mặt không đủ (cần 50000đ)!");
+                return;
+            }
+            player.cash -= cost;
+            player.politicalRank = 4;
+            player.netWorth = calculateNetworth(player);
+            set(ref(db, `rooms/${roomCode}/players/${playerId}`), player);
+            logHistory(`${player.name} chi 50000đ đi cửa sau, chính thức trở thành Ứng Viên Tổng Thống! Chờ kỳ bầu cử tiếp theo.`);
+            showEventPopup("ỨNG VIÊN TỔNG THỐNG", "Bạn đã hối lộ thành công và trở thành Ứng Viên Tổng Thống!\n\nHãy sống sót và chờ kỳ bầu cử tiếp theo — nếu đắc cử, bạn sẽ có quyền định đoạt vận mệnh của cả ván đấu!");
+            openModal("political");
+        }
+        window.bribeForPresidentialCandidacy = bribeForPresidentialCandidacy;
+
+        function presidentDecide(choice) {
+            const scenarios = {
+                war: {
+                    title: "CHIẾN TRANH TOÀN DIỆN ĐÃ BÙNG NỔ",
+                    body: "Vị Tổng Thống vừa đắc cử đã ký sắc lệnh phát động chiến tranh. Nền kinh tế sụp đổ chỉ sau một đêm, tiền tệ mất giá trị hoàn toàn, đất đai trở thành đống đổ nát. Không còn ai là người thắng cuộc — chỉ còn lại đống tro tàn của một ván cờ từng huy hoàng."
+                },
+                nationalize: {
+                    title: "QUỐC HỮU HÓA TOÀN BỘ TÀI SẢN",
+                    body: "Bằng một sắc lệnh duy nhất, Tổng Thống đã tuyên bố quốc hữu hóa mọi đất đai và tài sản tư nhân. Những đế chế bất động sản được xây dựng qua hàng chục vòng chơi giờ đây thuộc về nhà nước. Ván đấu khép lại trong tiếng thở dài của những nhà đầu tư từng giàu có nhất."
+                },
+                reform: {
+                    title: "CẢI CÁCH KINH TẾ CỰC ĐOAN",
+                    body: "Tổng Thống ban hành chính sách phân phối lại của cải — mọi tài sản được chia đều cho tất cả người chơi, bất kể ai đã nỗ lực nhiều hay ít. Một kết cục gây tranh cãi, nơi công bằng tuyệt đối đồng nghĩa với việc xóa bỏ mọi thành quả cá nhân."
+                }
+            };
+
+            const scenario = scenarios[choice];
+            update(ref(db, `rooms/${roomCode}`), {
+                gameEnded: true,
+                endingScenario: { type: choice, title: scenario.title, body: scenario.body, presidentName: gameState.players[playerId].name }
+            });
+            logHistory(`TỔNG THỐNG ${gameState.players[playerId].name} ĐÃ ĐƯA RA QUYẾT ĐỊNH ĐỊNH ĐOẠT VẬN MỆNH CẢ VÁN ĐẤU: "${scenario.title}"`);
+            document.getElementById("modal-president-decision").classList.add("hidden");
+        }
+        window.presidentDecide = presidentDecide;
+
+        function teleportToRailroad(targetIndex) {
+            const player = gameState.players[playerId];
+            const fromName = TILES[player.position].name;
+            const toName = TILES[targetIndex].name;
+
+            player.position = targetIndex;
+
+            set(ref(db, `rooms/${roomCode}/players/${playerId}/position`), targetIndex);
+            logHistory(`${player.name} sử dụng Mạng Lưới Ga Tàu, di chuyển miễn phí từ ${fromName} tới ${toName}.`);
+            closeModal();
+            showEventPopup("DI CHUYỂN GA TÀU", `Bạn đã di chuyển miễn phí từ "${fromName}" tới "${toName}" thông qua mạng lưới đường sắt của mình!`);
+        }
+        window.teleportToRailroad = teleportToRailroad;
+
+        // Bind global functions to window so they work with HTML inline onclick events
+        window.joinOrCreateRoom = joinOrCreateRoom;
+        window.leaveRoom = leaveRoom;
+        window.openModal = openModal;
+        window.closeModal = closeModal;
+        window.rollDice = rollDice;
+        window.handleJackpotClick = handleJackpotClick;
+        window.endTurn = endTurn;
+        window.declareBankruptcy = declareBankruptcy;
+        window.selectAvatar = selectAvatar;
+        window.updateDealPropsUI = updateDealPropsUI;
+        window.takeBankLoan = takeBankLoan;
+        window.takeLoanShark = takeLoanShark;
+        window.repayLoanShark = repayLoanShark;
+        window.depositSavings = depositSavings;
+        window.buyInsurance = buyInsurance;
+        window.handleMortgage = handleMortgage;
+        window.handleRedeem = handleRedeem;
+        window.sendTradeProposal = sendTradeProposal;
+        window.acceptTradeProposal = acceptTradeProposal;
+        window.declineTradeProposal = declineTradeProposal;
+        window.tradeStock = tradeStock;
+        window.playCasino = playCasino;
+        window.selectCasinoChoice = selectCasinoChoice;
+        window.studyCareer = studyCareer;
+        window.buyProperty = buyProperty;
+        window.buildHouse = buildHouse;
+        window.clearLogs = clearLogs;
+        window.showTileInfo = showTileInfo;
+        window.showTileExplain = showTileExplain;
+        window.closeEventPopup = closeEventPopup;
+    </script>
+</body>
+</html>
